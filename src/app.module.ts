@@ -1,7 +1,8 @@
 import { Module } from '@nestjs/common';
-import { DrizzleModule } from './drizzle/drizzle.module';
+import { AuthModule } from './modules/auth/auth.module';
+import { UsersModule } from './modules/users/users.module';
 
 @Module({
-  imports: [DrizzleModule],
+  imports: [AuthModule, UsersModule],
 })
 export class AppModule {}
