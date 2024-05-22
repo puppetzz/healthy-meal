@@ -1,4 +1,5 @@
 import {
+  AnyPgColumn,
   integer,
   pgTable,
   serial,
@@ -14,8 +15,8 @@ export const comments = pgTable('comments', {
   id: serial('id').primaryKey(),
   postId: integer('post_id')
     .notNull()
-    .references(() => posts.id),
-  parentId: integer('parent_id').references(() => comments.id),
+    .references(() => posts.id, { onDelete: 'cascade', onUpdate: 'cascade' }),
+  parentId: integer('parent_id').references((): AnyPgColumn => comments.id),
   userId: varchar('user_id')
     .notNull()
     .references(() => users.id),

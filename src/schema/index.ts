@@ -7,6 +7,6 @@ export * from './nutrition';
 export * from './post-category';
 export * from './posts';
 export * from './recipe-food-category';
-export * from './recipe-ingredient';
 export * from './recipes';
 export * from './users';
+export * from './meal-plan-recipe';

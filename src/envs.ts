@@ -1,14 +1,22 @@
 // Description: This file contains the environment variables that are used in the application.
+import { z } from 'zod';
 import 'dotenv/config';
 
-export const envs = {
-  DATABASE_HOST: process.env.DATABASE_HOST,
-  DATABASE_PORT: process.env.DATABASE_PORT,
-  DATABASE_USER: process.env.DATABASE_USER,
-  DATABASE_PASSWORD: process.env.DATABASE_PASSWORD,
-  DATABASE_NAME: process.env.DATABASE_NAME,
+const envSchema = z.object({
+  DATABASE_HOST: z.string(),
+  DATABASE_PORT: z.coerce.number(),
+  DATABASE_USER: z.string(),
+  DATABASE_PASSWORD: z.string(),
+  DATABASE_NAME: z.string(),
+  FIREBASE_PROJECT_ID: z.string(),
+  FIREBASE_PRIVATE_KEY: z.string(),
+  FIREBASE_CLIENT_EMAIL: z.string(),
+  S3_REGION: z.string(),
+  S3_BUCKET_NAME: z.string(),
+  S3_ACCESS_KEY: z.string(),
+  S3_SECRET_ACCESS_KEY: z.string(),
+});
 
-  FIREBASE_PROJECT_ID: process.env.FIREBASE_PROJECT_ID,
-  FIREBASE_CLIENT_EMAIL: process.env.FIREBASE_CLIENT_EMAIL,
-  FIREBASE_PRIVATE_KEY: process.env.FIREBASE_PRIVATE_KEY,
-};
+const envs = envSchema.parse(process.env);
+
+export { envs };

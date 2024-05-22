@@ -1,5 +1,6 @@
 import { relations } from 'drizzle-orm';
 import {
+  AnyPgColumn,
   boolean,
   integer,
   pgEnum,
@@ -27,15 +28,18 @@ export const posts = pgTable('posts', {
   authorId: varchar('author_id')
     .notNull()
     .references(() => users.id),
-  parentId: integer('parent_id').references(() => posts.id),
+  parentId: integer('parent_id').references((): AnyPgColumn => posts.id),
+  recipeId: integer('recipe_id').references(() => recipes.id),
   title: varchar('title').notNull(),
-  published: boolean('published').notNull(),
+  published: boolean('published')
+    .notNull()
+    .$default(() => false),
   createdAt: timestamp('created_at').defaultNow(),
   updatedAt: timestamp('updated_at').defaultNow(),
-  publishedAt: timestamp('published_at').defaultNow(),
+  publishedAt: timestamp('published_at'),
   content: text('content').notNull(),
   status: statusEnum('status'),
-  recipeId: integer('recipe_id').references(() => recipes.id),
+  thumbnail: varchar('thumbnail').notNull(),
 });
 
 export const postRelations = relations(posts, ({ one, many }) => ({

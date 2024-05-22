@@ -6,7 +6,7 @@ import { timestamp } from 'drizzle-orm/pg-core';
 export const users = pgTable('users', {
   id: varchar('id', { length: 256 }).primaryKey(),
   fullName: varchar('full_name').notNull(),
-  email: varchar('email').notNull(),
+  email: varchar('email').notNull().unique(),
   createdAt: timestamp('created_at').defaultNow(),
   picture: varchar('picture').notNull(),
 });

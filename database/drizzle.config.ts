@@ -7,7 +7,7 @@ export default {
   driver: 'pg',
   dbCredentials: {
     host: envs.DATABASE_HOST,
-    port: Number(envs.DATABASE_PORT),
+    port: envs.DATABASE_PORT,
     user: envs.DATABASE_USER,
     password: envs.DATABASE_PASSWORD,
     database: envs.DATABASE_NAME,
