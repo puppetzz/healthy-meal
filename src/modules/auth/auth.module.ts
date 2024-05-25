@@ -1,12 +1,11 @@
 import { Module } from '@nestjs/common';
-import { DrizzleModule } from 'src/drizzle/drizzle.module';
 import { AuthService } from './auth.service';
 import { AuthController } from './auth.controller';
 import { FirebaseStrategy } from './strategies/firebase.strategy';
+import { PrismaService } from '../../services/database/prisma.service';
 
 @Module({
-  imports: [DrizzleModule],
-  providers: [AuthService, FirebaseStrategy],
+  providers: [AuthService, FirebaseStrategy, PrismaService],
   controllers: [AuthController],
   exports: [FirebaseStrategy],
 })

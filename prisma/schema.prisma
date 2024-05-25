@@ -1,0 +1,223 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+generator kysely {
+  provider     = "prisma-kysely"
+  output       = "../src/database"
+  fileName     = "types.ts"
+  enumFileName = "enums.ts"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String     @id
+  fullName  String     @map("full_name")
+  email     String
+  picture   String?
+  createdAt DateTime   @default(now()) @map("created_at")
+  post      Post[]
+  comment   Comment[]
+  mealPlan  MealPlan[]
+
+  @@map("users")
+}
+
+model Post {
+  id          Int        @id @default(autoincrement())
+  authorId    String     @map("author_id")
+  parentId    Int?       @map("parent_id")
+  recipeId    Int?       @unique @map("recipe_id")
+  thumbnail   String?
+  title       String
+  content     String?
+  rating      Int?
+  status      PostStatus @default(DRAFT)
+  published   Boolean    @default(false)
+  createdAt   DateTime   @default(now()) @map("created_at")
+  updatedAt   DateTime   @default(now()) @map("updated_at")
+  publishedAt DateTime?  @map("published_at")
+
+  recipe       Recipe?        @relation(fields: [recipeId], references: [id])
+  author       User           @relation(fields: [authorId], references: [id])
+  parent       Post?          @relation("ParentPost", fields: [parentId], references: [id])
+  post         Post[]         @relation("ParentPost")
+  postCategory PostCategory[]
+  comment      Comment[]
+
+  @@map("posts")
+}
+
+model PostCategory {
+  postId     Int @map("post_id")
+  categoryId Int @map("category_id")
+
+  post     Post     @relation(fields: [postId], references: [id])
+  category Category @relation(fields: [categoryId], references: [id])
+
+  @@id([postId, categoryId])
+  @@map("post_categories")
+}
+
+model Category {
+  id           Int            @id @default(autoincrement())
+  name         String
+  postCategory PostCategory[]
+
+  @@map("categories")
+}
+
+model Comment {
+  id        Int      @id @default(autoincrement())
+  postId    Int      @map("post_id")
+  parentId  Int?     @map("parent_id")
+  authorId  String   @map("author_id")
+  title     String
+  content   String
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @default(now()) @map("updated_at")
+
+  post    Post      @relation(fields: [postId], references: [id])
+  author  User      @relation(fields: [authorId], references: [id])
+  parent  Comment?  @relation("ParentComment", fields: [parentId], references: [id])
+  comment Comment[] @relation("ParentComment")
+
+  @@map("comments")
+}
+
+model Recipe {
+  id                 Int                  @id @default(autoincrement())
+  prepTime           Int                  @map("prep_time")
+  cookTime           Int                  @map("cook_time")
+  servings           Int
+  calculationUnit    String               @map("calculation_unit")
+  keeping            String
+  freezer            String
+  ingredient         Ingredient[]
+  nutrition          Nutrition?
+  recipeFoodCategory RecipeFoodCategory[]
+  mealPlanRecipe     MealPlanRecipe[]
+  post               Post?
+
+  @@map("recipes")
+}
+
+model Nutrition {
+  id                 Int  @id @default(autoincrement())
+  recipeId           Int  @unique @map("recipe_id")
+  calories           Int
+  protein            Int
+  carbohydrates      Int
+  fat                Int
+  saturatedFat       Int? @map("saturated_fat")
+  polyunsaturatedFat Int? @map("polyunsaturated_fat")
+  monounsaturatedFat Int? @map("monounsaturated_fat")
+  transFat           Int? @map("trans_fat")
+  fiber              Int?
+  sugar              Int?
+  sodium             Int?
+  potassium          Int?
+  cholesterol        Int?
+  vitaminA           Int? @map("vitamin_a")
+  vitaminC           Int? @map("vitamin_c")
+  calcium            Int?
+  iron               Int?
+
+  recipe Recipe @relation(fields: [recipeId], references: [id])
+
+  @@map("nutritions")
+}
+
+model Ingredient {
+  id          Int     @id @default(autoincrement())
+  recipeId    Int     @map("recipe_id")
+  name        String
+  description String?
+  amount      Float
+  unit        String
+  preparation String?
+
+  recipe Recipe @relation(fields: [recipeId], references: [id])
+
+  @@map("ingredients")
+}
+
+model FoodCategory {
+  id                 Int                  @id @default(autoincrement())
+  name               String
+  icon               String
+  key                String               @unique
+  numberOfRecipes    Int                  @default(0) @map("number_of_recipes")
+  recipeFoodCategory RecipeFoodCategory[]
+
+  @@map("food_categories")
+}
+
+model RecipeFoodCategory {
+  recipeId       Int @map("recipe_id")
+  foodCategoryId Int @map("food_category_id")
+
+  recipe       Recipe       @relation(fields: [recipeId], references: [id])
+  foodCategory FoodCategory @relation(fields: [foodCategoryId], references: [id])
+
+  @@id([recipeId, foodCategoryId])
+  @@map("recipe_food_categories")
+}
+
+model MealPlan {
+  id             Int               @id @default(autoincrement())
+  authorId       String            @map("author_id")
+  title          String
+  content        String
+  status         MealPlanStatus    @default(DRAFT)
+  frequency      MealPlanFrequency @default(DAILY)
+  createdAt      DateTime          @default(now()) @map("created_at")
+  updatedAt      DateTime          @default(now()) @map("updated_at")
+  mealPlanRecipe MealPlanRecipe[]
+
+  author User @relation(fields: [authorId], references: [id])
+
+  @@map("meal_plans")
+}
+
+model MealPlanRecipe {
+  mealPlanId Int @map("meal_plan_id")
+  recipeId   Int @map("recipe_id")
+  day        Int @default(1)
+  meal       Int @default(1)
+
+  mealPlan MealPlan @relation(fields: [mealPlanId], references: [id])
+  recipe   Recipe   @relation(fields: [recipeId], references: [id])
+
+  @@id([mealPlanId, recipeId])
+  @@map("meal_plan_recipes")
+}
+
+enum PostStatus {
+  DRAFT
+  PENDING
+  ACCEPTED
+  REJECTED
+}
+
+enum MealPlanStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
+enum MealPlanFrequency {
+  DAILY
+  WEEKLY
+  MONTHLY
+}

@@ -1,45 +1,64 @@
-import { HttpStatus, Inject, Injectable } from '@nestjs/common';
-import { isNotNull } from 'drizzle-orm';
-import { Database } from '../../types/drizzle-database/drizzle-database.type';
-import { DRIZZLE_PROVIDER } from '../../common/constants/general';
-import { posts } from '../../schema';
-import { S3Service } from '../../services/s3/s3.service';
+import { HttpStatus, Injectable } from '@nestjs/common';
+import { PrismaService } from '../../services/database/prisma.service';
 import { ResponseType } from '../../types/response-type';
-import { Post } from '../../types/schema/post.type';
+import { Prisma } from '@prisma/client';
+import { GetRecipeDTO } from '../../common/dto/recipes/get-recipe.dto';
+import { PostPagination } from '../../types/post-pagination.type';
 
 @Injectable()
 export class RecipeService {
-  constructor(
-    @Inject(DRIZZLE_PROVIDER)
-    private readonly db: Database,
-    private readonly s3Service: S3Service,
-  ) {}
+  constructor(private readonly prismaService: PrismaService) {}
 
-  public async getRecipes(): Promise<ResponseType<Post[]>> {
-    const recipe = await this.db.query.posts.findMany({
-      where: isNotNull(posts.recipeId),
-      with: {
-        recipe: {
-          with: {
-            nutrition: true,
+  public async getRecipes(
+    GetRecipeDTO: GetRecipeDTO,
+  ): Promise<ResponseType<PostPagination>> {
+    const { page, pageSize, categoryId } = GetRecipeDTO;
+
+    const skip = pageSize ? (page - 1) * pageSize : 0;
+    const where: Prisma.PostWhereInput = categoryId
+      ? {
+          recipe: {
             recipeFoodCategory: {
-              with: {
-                foodCategory: true,
-              },
-              columns: {
-                foodCategoryId: false,
-                recipeId: false,
+              some: {
+                foodCategoryId: categoryId,
               },
             },
           },
+        }
+      : {};
+
+    const recipes = await this.prismaService.post.findMany({
+      where,
+      include: {
+        recipe: {
+          include: {
+            recipeFoodCategory: {
+              include: {
+                foodCategory: true,
+              },
+            },
+            nutrition: true,
+          },
         },
       },
+      skip,
+      take: pageSize,
     });
 
+    const numberOfRecipes = await this.prismaService.post.count({
+      where: where,
+    });
+
+    const totalPage = Math.ceil(numberOfRecipes / pageSize);
+
     return {
-      data: recipe,
-      message: 'Recipes fetched successfully',
       status: HttpStatus.OK,
+      data: {
+        data: recipes,
+        page,
+        total: totalPage,
+      },
+      message: 'Recipes fetched successfully!',
     };
   }
 }
