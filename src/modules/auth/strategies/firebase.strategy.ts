@@ -4,18 +4,18 @@ import { Strategy } from 'passport-http-bearer';
 import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { auth } from 'firebase-admin';
 import { FirebasePayload } from 'src/types/firebase-payload.type';
-import { envs } from 'src/envs';
+import { ConfigService } from '@nestjs/config';
 
 @Injectable()
 export class FirebaseStrategy extends PassportStrategy(Strategy, 'firebase') {
-  constructor() {
+  constructor(private configService: ConfigService) {
     super();
 
     initializeApp({
       credential: cert({
-        projectId: envs.FIREBASE_PROJECT_ID,
-        clientEmail: envs.FIREBASE_CLIENT_EMAIL,
-        privateKey: envs.FIREBASE_PRIVATE_KEY,
+        projectId: this.configService.get('FIREBASE_PROJECT_ID'),
+        clientEmail: this.configService.get('FIREBASE_CLIENT_EMAIL'),
+        privateKey: this.configService.get('FIREBASE_PRIVATE_KEY'),
       } as ServiceAccount),
     });
   }

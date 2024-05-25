@@ -1,12 +1,13 @@
 import { Module } from '@nestjs/common';
 import { RecipeController } from './recipe.controller';
 import { RecipeService } from './recipe.service';
-import { DrizzleModule } from 'src/drizzle/drizzle.module';
 import { S3Service } from '../../services/s3/s3.service';
+import { KyselyModule } from '../../database/kysely/kysely.module';
+import { PrismaService } from '../../services/database/prisma.service';
 
 @Module({
-  imports: [DrizzleModule],
+  imports: [KyselyModule],
   controllers: [RecipeController],
-  providers: [RecipeService, S3Service],
+  providers: [RecipeService, S3Service, PrismaService],
 })
 export class RecipeModule {}

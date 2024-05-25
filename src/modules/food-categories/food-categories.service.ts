@@ -1,29 +1,19 @@
-import { HttpStatus, Inject, Injectable } from '@nestjs/common';
-import { DRIZZLE_PROVIDER } from '../../common/constants/general';
-import { Database } from '../../types/drizzle-database/drizzle-database.type';
+import { HttpStatus, Injectable } from '@nestjs/common';
+import { PrismaService } from '../../services/database/prisma.service';
+import { ResponseType } from '../../types/response-type';
+import { FoodCategory } from '@prisma/client';
 
 @Injectable()
 export class FoodCategoriesService {
-  constructor(
-    @Inject(DRIZZLE_PROVIDER)
-    private readonly db: Database,
-  ) {}
+  constructor(private readonly prismaService: PrismaService) {}
 
-  public async getFoodCategories() {
-    const categories = await this.db.query.foodCategories.findMany({
-      columns: {
-        id: true,
-        key: true,
-        name: true,
-        icon: true,
-        numberOfRecipes: true,
-      },
-    });
+  public async getFoodCategories(): Promise<ResponseType<FoodCategory[]>> {
+    const foodCategories = await this.prismaService.foodCategory.findMany();
 
     return {
-      data: categories,
-      message: 'Food categories fetched successfully!',
       status: HttpStatus.OK,
+      data: foodCategories,
+      message: 'Food categories fetched successfully!',
     };
   }
 }

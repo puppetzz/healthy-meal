@@ -1,11 +1,10 @@
 import { Module } from '@nestjs/common';
 import { FoodCategoriesService } from './food-categories.service';
-import { DrizzleModule } from '../../drizzle/drizzle.module';
 import { FoodCategoriesController } from './food-categories.controller';
+import { PrismaService } from '../../services/database/prisma.service';
 
 @Module({
-  imports: [DrizzleModule],
   controllers: [FoodCategoriesController],
-  providers: [FoodCategoriesService],
+  providers: [FoodCategoriesService, PrismaService],
 })
 export class FoodCategoriesModule {}

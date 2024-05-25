@@ -4,20 +4,20 @@ import {
   S3Client,
 } from '@aws-sdk/client-s3';
 import { Injectable } from '@nestjs/common';
-import { envs } from '../../envs';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { S3_PRESIGNED_URL_EXPIRATION } from '../../common/constants/general';
+import { ConfigService } from '@nestjs/config';
 
 @Injectable()
 export class S3Service {
   private s3Client: S3Client;
 
-  constructor() {
+  constructor(private readonly configService: ConfigService) {
     this.s3Client = new S3Client({
-      region: envs.S3_REGION,
+      region: this.configService.get('S3_REGION'),
       credentials: {
-        accessKeyId: envs.S3_ACCESS_KEY,
-        secretAccessKey: envs.S3_SECRET_ACCESS_KEY,
+        accessKeyId: this.configService.get('S3_ACCESS_KEY'),
+        secretAccessKey: this.configService.get('S3_SECRET_ACCESS_KEY'),
       },
     });
   }
@@ -27,7 +27,7 @@ export class S3Service {
     ContentType: string,
   ): Promise<string> {
     const putObjectCommand = new PutObjectCommand({
-      Bucket: envs.S3_BUCKET_NAME,
+      Bucket: this.configService.get('S3_BUCKET_NAME'),
       Key: key,
       ContentType,
     });
@@ -39,7 +39,7 @@ export class S3Service {
 
   public async createGetObjectSigner(key: string): Promise<string> {
     const getObjectCommand = new GetObjectCommand({
-      Bucket: envs.S3_BUCKET_NAME,
+      Bucket: this.configService.get('S3_BUCKET_NAME'),
       Key: `${key}`,
     });
 
