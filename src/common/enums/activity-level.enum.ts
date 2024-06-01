@@ -1,0 +1,7 @@
+export enum ActivityLevel {
+  SEDENTARY = 1.2,
+  LIGHTLY_EXERCISE = 1.375,
+  MODERATELY_EXERCISE = 1.55,
+  HEAVY_EXERCISE = 1.725,
+  ATHLETE = 1.9,
+}

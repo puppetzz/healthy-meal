@@ -1,6 +1,6 @@
 import { HttpStatus, Injectable } from '@nestjs/common';
-import { FirebasePayload } from 'src/types/firebase-payload.type';
-import { ResponseType } from 'src/types/response-type';
+import { TFirebasePayload } from 'src/types/firebase-payload.type';
+import { TResponse } from 'src/types/response-type';
 import { PrismaService } from '../../services/database/prisma.service';
 import { User } from '@prisma/client';
 
@@ -8,7 +8,7 @@ import { User } from '@prisma/client';
 export class AuthService {
   constructor(private readonly prismaService: PrismaService) {}
 
-  public async login(payload: FirebasePayload): Promise<ResponseType<User>> {
+  public async login(payload: TFirebasePayload): Promise<TResponse<User>> {
     const user = await this.prismaService.user.findFirst({
       where: {
         id: payload.uid,

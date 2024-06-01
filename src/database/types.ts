@@ -4,19 +4,20 @@ export type Generated<T> = T extends ColumnType<infer S, infer I, infer U>
   : ColumnType<T, T | undefined, T>;
 export type Timestamp = ColumnType<Date, Date | string, Date | string>;
 
-import type { PostStatus, MealPlanStatus, MealPlanFrequency } from "./enums";
+import type { PostStatus, MealPlanStatus, MealPlanFrequency, Gender, ActivityLevel } from "./enums";
 
 export type Category = {
     id: Generated<number>;
     name: string;
+    key: string;
 };
 export type Comment = {
     id: Generated<number>;
     post_id: number;
     parent_id: number | null;
     author_id: string;
-    title: string;
     content: string;
+    rating: number | null;
     created_at: Generated<Timestamp>;
     updated_at: Generated<Timestamp>;
 };
@@ -26,6 +27,18 @@ export type FoodCategory = {
     icon: string;
     key: string;
     number_of_recipes: Generated<number>;
+};
+export type HealthMetric = {
+    id: Generated<number>;
+    user_id: string;
+    weight: number;
+    height: number;
+    age: number;
+    activity_level: string;
+    gender: Gender;
+    bmi: number;
+    bmr: number;
+    tdee: number;
 };
 export type Ingredient = {
     id: Generated<number>;
@@ -47,6 +60,7 @@ export type MealPlan = {
     updated_at: Generated<Timestamp>;
 };
 export type MealPlanRecipe = {
+    id: Generated<number>;
     meal_plan_id: number;
     recipe_id: number;
     day: Generated<number>;
@@ -82,6 +96,8 @@ export type Post = {
     title: string;
     content: string | null;
     rating: number | null;
+    number_of_comments: Generated<number>;
+    number_of_reviews: Generated<number>;
     status: Generated<PostStatus>;
     published: Generated<boolean>;
     created_at: Generated<Timestamp>;
@@ -97,6 +113,7 @@ export type Recipe = {
     prep_time: number;
     cook_time: number;
     servings: number;
+    serving_size: number | null;
     calculation_unit: string;
     keeping: string;
     freezer: string;
@@ -116,6 +133,7 @@ export type DB = {
     categories: Category;
     comments: Comment;
     food_categories: FoodCategory;
+    health_metrics: HealthMetric;
     ingredients: Ingredient;
     meal_plan_recipes: MealPlanRecipe;
     meal_plans: MealPlan;

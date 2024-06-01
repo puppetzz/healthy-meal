@@ -3,7 +3,7 @@ import { cert, initializeApp, ServiceAccount } from 'firebase-admin/app';
 import { Strategy } from 'passport-http-bearer';
 import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { auth } from 'firebase-admin';
-import { FirebasePayload } from 'src/types/firebase-payload.type';
+import { TFirebasePayload } from 'src/types/firebase-payload.type';
 import { ConfigService } from '@nestjs/config';
 
 @Injectable()
@@ -20,7 +20,7 @@ export class FirebaseStrategy extends PassportStrategy(Strategy, 'firebase') {
     });
   }
 
-  async validate(token: string): Promise<FirebasePayload> {
+  async validate(token: string): Promise<TFirebasePayload> {
     try {
       const decodedToken = await auth().verifyIdToken(token);
 

@@ -21,32 +21,35 @@ datasource db {
 }
 
 model User {
-  id        String     @id
-  fullName  String     @map("full_name")
-  email     String
-  picture   String?
-  createdAt DateTime   @default(now()) @map("created_at")
-  post      Post[]
-  comment   Comment[]
-  mealPlan  MealPlan[]
+  id           String        @id
+  fullName     String        @map("full_name")
+  email        String
+  picture      String?
+  createdAt    DateTime      @default(now()) @map("created_at")
+  post         Post[]
+  comment      Comment[]
+  mealPlan     MealPlan[]
+  HealthMetric HealthMetric?
 
   @@map("users")
 }
 
 model Post {
-  id          Int        @id @default(autoincrement())
-  authorId    String     @map("author_id")
-  parentId    Int?       @map("parent_id")
-  recipeId    Int?       @unique @map("recipe_id")
-  thumbnail   String?
-  title       String
-  content     String?
-  rating      Int?
-  status      PostStatus @default(DRAFT)
-  published   Boolean    @default(false)
-  createdAt   DateTime   @default(now()) @map("created_at")
-  updatedAt   DateTime   @default(now()) @map("updated_at")
-  publishedAt DateTime?  @map("published_at")
+  id               Int        @id @default(autoincrement())
+  authorId         String     @map("author_id")
+  parentId         Int?       @map("parent_id")
+  recipeId         Int?       @unique @map("recipe_id")
+  thumbnail        String?
+  title            String
+  content          String?
+  rating           Float?
+  numberOfComments Int        @default(0) @map("number_of_comments")
+  numberOfReviews  Int        @default(0) @map("number_of_reviews")
+  status           PostStatus @default(DRAFT)
+  published        Boolean    @default(false)
+  createdAt        DateTime   @default(now()) @map("created_at")
+  updatedAt        DateTime   @default(now()) @map("updated_at")
+  publishedAt      DateTime?  @map("published_at")
 
   recipe       Recipe?        @relation(fields: [recipeId], references: [id])
   author       User           @relation(fields: [authorId], references: [id])
@@ -72,6 +75,7 @@ model PostCategory {
 model Category {
   id           Int            @id @default(autoincrement())
   name         String
+  key          String         @unique
   postCategory PostCategory[]
 
   @@map("categories")
@@ -82,8 +86,8 @@ model Comment {
   postId    Int      @map("post_id")
   parentId  Int?     @map("parent_id")
   authorId  String   @map("author_id")
-  title     String
   content   String
+  rating    Float?
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @default(now()) @map("updated_at")
 
@@ -100,6 +104,7 @@ model Recipe {
   prepTime           Int                  @map("prep_time")
   cookTime           Int                  @map("cook_time")
   servings           Int
+  servingSize        Int?                 @map("serving_size")
   calculationUnit    String               @map("calculation_unit")
   keeping            String
   freezer            String
@@ -191,6 +196,7 @@ model MealPlan {
 }
 
 model MealPlanRecipe {
+  id         Int @id @default(autoincrement())
   mealPlanId Int @map("meal_plan_id")
   recipeId   Int @map("recipe_id")
   day        Int @default(1)
@@ -199,8 +205,24 @@ model MealPlanRecipe {
   mealPlan MealPlan @relation(fields: [mealPlanId], references: [id])
   recipe   Recipe   @relation(fields: [recipeId], references: [id])
 
-  @@id([mealPlanId, recipeId])
   @@map("meal_plan_recipes")
+}
+
+model HealthMetric {
+  id            Int    @id @default(autoincrement())
+  userId        String @unique @map("user_id")
+  weight        Float
+  height        Float
+  age           Int
+  activityLevel String @map("activity_level")
+  gender        Gender
+  bmi           Int
+  bmr           Int
+  tdee          Int
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@map("health_metrics")
 }
 
 enum PostStatus {
@@ -212,6 +234,7 @@ enum PostStatus {
 
 enum MealPlanStatus {
   DRAFT
+  PENDING
   PUBLISHED
   ARCHIVED
 }
@@ -220,4 +243,17 @@ enum MealPlanFrequency {
   DAILY
   WEEKLY
   MONTHLY
+}
+
+enum Gender {
+  MALE
+  FEMALE
+}
+
+enum ActivityLevel {
+  SEDENTARY
+  LIGHTLY_EXERCISE
+  MODERATELY_EXERCISE
+  HEAVY_EXERCISE
+  ATHLETE
 }

@@ -1,5 +1,6 @@
 import { Post } from '@prisma/client';
-export type PostPagination = {
+
+export type TPostPagination = {
   data: Post[];
   page: number;
   total: number;

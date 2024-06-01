@@ -1,11 +1,15 @@
-import { PostStatus, PrismaClient } from '@prisma/client';
+import { MealPlanStatus, PostStatus, PrismaClient } from '@prisma/client';
 import { faker } from '@faker-js/faker';
 
 const prisma = new PrismaClient();
 
 async function main() {
   await prisma.category.createMany({
-    data: [{ name: 'recipe' }, { name: 'food' }, { name: 'drink' }],
+    data: [
+      { name: 'recipe', key: 'recipe' },
+      { name: 'food', key: 'food' },
+      { name: 'drink', key: 'drink' },
+    ],
   });
 
   for (let i = 0; i < 10; i++) {
@@ -26,6 +30,7 @@ async function main() {
           prepTime: 10,
           cookTime: 20,
           servings: 4,
+          servingSize: 374,
           calculationUnit: 'cup',
           freezer: '3-4 days',
           keeping: '3-4 days',
@@ -75,7 +80,6 @@ async function main() {
       data: {
         postId: post.id,
         authorId: user.id,
-        title: faker.lorem.sentence(),
         content: faker.lorem.paragraph(),
       },
     });
@@ -112,6 +116,24 @@ async function main() {
         vitaminC: 1,
       },
     });
+
+    const mealPlan = await prisma.mealPlan.create({
+      data: {
+        authorId: user.id,
+        title: faker.lorem.sentence(),
+        content: faker.lorem.paragraph(),
+        status: MealPlanStatus.PUBLISHED,
+      },
+    });
+
+    for (let j = 0; j < 3; j++) {
+      await prisma.mealPlanRecipe.create({
+        data: {
+          mealPlanId: mealPlan.id,
+          recipeId: recipe.id,
+        },
+      });
+    }
   }
 }
 
