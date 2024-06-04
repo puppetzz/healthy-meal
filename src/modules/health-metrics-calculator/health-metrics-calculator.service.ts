@@ -121,6 +121,22 @@ export class HealthMetricsCalculatorService {
     };
   }
 
+  public async getHealthMetricsForUser(userId: string) {
+    const healthMetrics = await this.prismaService.healthMetric.findFirst({
+      where: {
+        userId: userId,
+      },
+    });
+
+    return await this.calculateTDEEForUser(null, {
+      weight: healthMetrics.weight,
+      height: healthMetrics.height,
+      age: healthMetrics.age,
+      gender: healthMetrics.gender,
+      activityLevel: healthMetrics.activityLevel as keyof typeof ActivityLevel,
+    });
+  }
+
   public calculateBMI(weight: number, height: number) {
     const bmi = weight / Math.pow(height / 100, 2);
 
@@ -150,7 +166,7 @@ export class HealthMetricsCalculatorService {
     return tdee;
   }
 
-  public getRecommendedCaloriesPerMeal(
+  private getRecommendedCaloriesPerMeal(
     mealsPerDay: number,
     tdee: number,
   ): number[] {
@@ -165,7 +181,7 @@ export class HealthMetricsCalculatorService {
     return portions.map((portion) => Math.round(tdee * portion));
   }
 
-  public calculateIdealWeightRange(
+  private calculateIdealWeightRange(
     height: number,
     gender: Gender,
   ): IdealWeight {
@@ -199,7 +215,7 @@ export class HealthMetricsCalculatorService {
     };
   }
 
-  public getMacronutrients(tdee: number): TMacronutrientsForGoal {
+  private getMacronutrients(tdee: number): TMacronutrientsForGoal {
     const cuttingTDEE = tdee - 500;
     const bulkingTDEE = tdee + 500;
 

@@ -1,8 +1,9 @@
 import { HttpStatus, Injectable } from '@nestjs/common';
 import { PrismaService } from '../../services/database/prisma.service';
 import { TResponse } from '../../types/response-type';
-import { Comment } from '@prisma/client';
-import { CreateCommentDTO } from '../../common/dto/comments/create-comment.dto';
+import { Comment, MealPlanComment } from '@prisma/client';
+import { CreatePostCommentDTO } from '../../common/dto/comments/create-post-comment.dto';
+import { CreateMealPlanCommentDTO } from '../../common/dto/comments/create-meal-plan-comment';
 
 @Injectable()
 export class CommentsService {
@@ -51,49 +52,135 @@ export class CommentsService {
     };
   }
 
-  public async createComment(
+  public async createPostComment(
     userId: string,
-    createCommentDTO: CreateCommentDTO,
+    createPostCommentDTO: CreatePostCommentDTO,
   ): Promise<TResponse<Comment>> {
     const comment = await this.prismaService.comment.create({
       data: {
         authorId: userId,
-        postId: createCommentDTO.postId,
-        parentId: createCommentDTO.parentId,
-        content: createCommentDTO.content,
-        rating: createCommentDTO.rating ? createCommentDTO.rating : null,
+        postId: createPostCommentDTO.postId,
+        parentId: createPostCommentDTO.parentId,
+        content: createPostCommentDTO.content,
+        rating: createPostCommentDTO.rating
+          ? createPostCommentDTO.rating
+          : null,
       },
     });
 
     const post = await this.prismaService.post.findFirst({
       where: {
-        id: createCommentDTO.postId,
+        id: createPostCommentDTO.postId,
       },
     });
 
     let rating = post.rating;
 
-    if (createCommentDTO.rating) {
+    if (createPostCommentDTO.rating) {
       if (rating && !!post.numberOfReviews) {
         rating =
-          (rating * post.numberOfReviews + createCommentDTO.rating) /
+          (rating * post.numberOfReviews + createPostCommentDTO.rating) /
           (post.numberOfReviews + 1);
       }
       if (!rating) {
-        rating = createCommentDTO.rating;
+        rating = createPostCommentDTO.rating;
       }
     }
 
     await this.prismaService.post.update({
       where: {
-        id: createCommentDTO.postId,
+        id: createPostCommentDTO.postId,
       },
       data: {
         rating,
         numberOfComments: {
           increment: 1,
         },
-        numberOfReviews: createCommentDTO.rating
+        numberOfReviews: createPostCommentDTO.rating
+          ? {
+              increment: 1,
+            }
+          : undefined,
+      },
+    });
+
+    return {
+      data: comment,
+      message: 'Comment created successfully!',
+      status: HttpStatus.CREATED,
+    };
+  }
+
+  public async getMealPlanComment(
+    id: number,
+  ): Promise<TResponse<MealPlanComment[]>> {
+    const comment = await this.prismaService.mealPlanComment.findMany({
+      where: {
+        mealPlanId: id,
+        parentId: null,
+      },
+      include: {
+        author: true,
+        comment: {
+          include: {
+            author: true,
+          },
+        },
+      },
+    });
+
+    return {
+      data: comment,
+      message: 'Comments fetched successfully!',
+      status: HttpStatus.OK,
+    };
+  }
+
+  public async createMealPlanComment(
+    userId: string,
+    createMealPlanCommentDTO: CreateMealPlanCommentDTO,
+  ): Promise<TResponse<MealPlanComment>> {
+    const comment = await this.prismaService.mealPlanComment.create({
+      data: {
+        authorId: userId,
+        mealPlanId: createMealPlanCommentDTO.mealPlanId,
+        parentId: createMealPlanCommentDTO.parentId,
+        content: createMealPlanCommentDTO.content,
+        rating: createMealPlanCommentDTO.rating
+          ? createMealPlanCommentDTO.rating
+          : null,
+      },
+    });
+
+    const post = await this.prismaService.mealPlan.findFirst({
+      where: {
+        id: createMealPlanCommentDTO.mealPlanId,
+      },
+    });
+
+    let rating = post.rating;
+
+    if (createMealPlanCommentDTO.rating) {
+      if (rating && !!post.numberOfReviews) {
+        rating =
+          (rating * post.numberOfReviews + createMealPlanCommentDTO.rating) /
+          (post.numberOfReviews + 1);
+      }
+      if (!rating) {
+        rating = createMealPlanCommentDTO.rating;
+      }
+    }
+
+    await this.prismaService.mealPlan.update({
+      where: {
+        id: createMealPlanCommentDTO.mealPlanId,
+      },
+      data: {
+        rating,
+        numberOfComments: {
+          increment: 1,
+        },
+        numberOfReviews: createMealPlanCommentDTO.rating
           ? {
               increment: 1,
             }

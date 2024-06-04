@@ -53,9 +53,23 @@ export type MealPlan = {
     id: Generated<number>;
     author_id: string;
     title: string;
-    content: string;
+    content: string | null;
     status: Generated<MealPlanStatus>;
     frequency: Generated<MealPlanFrequency>;
+    created_at: Generated<Timestamp>;
+    updated_at: Generated<Timestamp>;
+    publishedAt: Timestamp | null;
+    rating: Generated<number>;
+    number_of_comments: Generated<number>;
+    number_of_reviews: Generated<number>;
+};
+export type MealPlanComment = {
+    id: Generated<number>;
+    meal_plan_id: number;
+    parent_id: number | null;
+    author_id: string;
+    content: string;
+    rating: number | null;
     created_at: Generated<Timestamp>;
     updated_at: Generated<Timestamp>;
 };
@@ -135,6 +149,7 @@ export type DB = {
     food_categories: FoodCategory;
     health_metrics: HealthMetric;
     ingredients: Ingredient;
+    meal_plan_comments: MealPlanComment;
     meal_plan_recipes: MealPlanRecipe;
     meal_plans: MealPlan;
     nutritions: Nutrition;

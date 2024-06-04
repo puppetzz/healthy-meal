@@ -1,4 +1,4 @@
-import { IsNumber, IsOptional } from 'class-validator';
+import { IsNumber, IsOptional, IsString } from 'class-validator';
 import { PaginationDTO } from '../pagination.dto';
 import { Type } from 'class-transformer';
 
@@ -7,4 +7,8 @@ export class GetRecipeDTO extends PaginationDTO {
   @IsNumber()
   @Type(() => Number)
   categoryId: number;
+
+  @IsOptional()
+  @IsString()
+  search: string;
 }

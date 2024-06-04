@@ -1,8 +1,9 @@
-import { Body, Controller, Post, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Post, UseGuards } from '@nestjs/common';
 import { HealthMetricsCalculatorService } from './health-metrics-calculator.service';
 import { PermissiveAuthGuard } from '../auth/guards/auth.guard';
 import { TDEECalculatorDTO } from '../../common/dto/health-metrics/calculator-TDEE.dto';
 import { AuthUser } from '../../decorators/auth.decorator';
+import { FirebaseGuard } from '../auth/guards/firebase.guard';
 
 @Controller('health-metrics')
 export class HealthMetricsCalculatorController {
@@ -20,5 +21,11 @@ export class HealthMetricsCalculatorController {
       userId,
       tdeeCalculatorDTO,
     );
+  }
+
+  @Get()
+  @UseGuards(FirebaseGuard)
+  public async getHealthMetrics(@AuthUser('uid') userId: string) {
+    return this.healthMetricsCalculatorService.getHealthMetricsForUser(userId);
   }
 }

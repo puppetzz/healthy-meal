@@ -2,7 +2,8 @@ import { Body, Controller, Get, Param, Post, UseGuards } from '@nestjs/common';
 import { CommentsService } from './comments.service';
 import { FirebaseGuard } from '../auth/guards/firebase.guard';
 import { AuthUser } from '../../decorators/auth.decorator';
-import { CreateCommentDTO } from '../../common/dto/comments/create-comment.dto';
+import { CreatePostCommentDTO } from '../../common/dto/comments/create-post-comment.dto';
+import { CreateMealPlanCommentDTO } from '../../common/dto/comments/create-meal-plan-comment';
 
 @Controller('comments')
 export class CommentsController {
@@ -23,8 +24,25 @@ export class CommentsController {
   @UseGuards(FirebaseGuard)
   public async createComment(
     @AuthUser('uid') userId: string,
-    @Body() createCommentDTO: CreateCommentDTO,
+    @Body() createCommentDTO: CreatePostCommentDTO,
   ) {
-    return this.commentsService.createComment(userId, createCommentDTO);
+    return this.commentsService.createPostComment(userId, createCommentDTO);
+  }
+
+  @Get('meal-plan/:id')
+  public async getMealPlanComment(@Param('id') id: number) {
+    return this.commentsService.getMealPlanComment(Number(id));
+  }
+
+  @Post('meal-plan')
+  @UseGuards(FirebaseGuard)
+  public async createMealPlanComment(
+    @AuthUser('uid') userId: string,
+    @Body() createMealPlanCommentDTO: CreateMealPlanCommentDTO,
+  ) {
+    return this.commentsService.createMealPlanComment(
+      userId,
+      createMealPlanCommentDTO,
+    );
   }
 }

@@ -5,7 +5,8 @@
 // Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
 
 generator client {
-  provider = "prisma-client-js"
+  provider        = "prisma-client-js"
+  previewFeatures = ["fullTextSearch"]
 }
 
 generator kysely {
@@ -21,15 +22,17 @@ datasource db {
 }
 
 model User {
-  id           String        @id
-  fullName     String        @map("full_name")
-  email        String
-  picture      String?
-  createdAt    DateTime      @default(now()) @map("created_at")
-  post         Post[]
-  comment      Comment[]
-  mealPlan     MealPlan[]
-  HealthMetric HealthMetric?
+  id        String   @id
+  fullName  String   @map("full_name")
+  email     String
+  picture   String?
+  createdAt DateTime @default(now()) @map("created_at")
+
+  post            Post[]
+  comment         Comment[]
+  mealPlan        MealPlan[]
+  HealthMetric    HealthMetric?
+  MealPlanComment MealPlanComment[]
 
   @@map("users")
 }
@@ -180,17 +183,22 @@ model RecipeFoodCategory {
 }
 
 model MealPlan {
-  id             Int               @id @default(autoincrement())
-  authorId       String            @map("author_id")
-  title          String
-  content        String
-  status         MealPlanStatus    @default(DRAFT)
-  frequency      MealPlanFrequency @default(DAILY)
-  createdAt      DateTime          @default(now()) @map("created_at")
-  updatedAt      DateTime          @default(now()) @map("updated_at")
-  mealPlanRecipe MealPlanRecipe[]
+  id               Int               @id @default(autoincrement())
+  authorId         String            @map("author_id")
+  title            String
+  content          String?
+  status           MealPlanStatus    @default(DRAFT)
+  frequency        MealPlanFrequency @default(DAILY)
+  createdAt        DateTime          @default(now()) @map("created_at")
+  updatedAt        DateTime          @default(now()) @map("updated_at")
+  publishedAt      DateTime?
+  rating           Float             @default(0)
+  numberOfComments Int               @default(0) @map("number_of_comments")
+  numberOfReviews  Int               @default(0) @map("number_of_reviews")
+  mealPlanRecipe   MealPlanRecipe[]
 
-  author User @relation(fields: [authorId], references: [id])
+  author          User              @relation(fields: [authorId], references: [id])
+  mealPlanComment MealPlanComment[]
 
   @@map("meal_plans")
 }
@@ -223,6 +231,24 @@ model HealthMetric {
   user User @relation(fields: [userId], references: [id])
 
   @@map("health_metrics")
+}
+
+model MealPlanComment {
+  id         Int      @id @default(autoincrement())
+  mealPlanId Int      @map("meal_plan_id")
+  parentId   Int?     @map("parent_id")
+  authorId   String   @map("author_id")
+  content    String
+  rating     Float?
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @default(now()) @map("updated_at")
+
+  mealPlan MealPlan          @relation(fields: [mealPlanId], references: [id])
+  author   User              @relation(fields: [authorId], references: [id])
+  parent   MealPlanComment?  @relation("ParentMealPlanComment", fields: [parentId], references: [id])
+  comment  MealPlanComment[] @relation("ParentMealPlanComment")
+
+  @@map("meal_plan_comments")
 }
 
 enum PostStatus {

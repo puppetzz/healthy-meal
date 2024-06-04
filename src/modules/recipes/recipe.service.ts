@@ -13,7 +13,7 @@ export class RecipeService {
   public async getRecipes(
     GetRecipeDTO: GetRecipeDTO,
   ): Promise<TResponse<TPostPagination>> {
-    const { page, pageSize, categoryId } = GetRecipeDTO;
+    const { page, pageSize, categoryId, search } = GetRecipeDTO;
 
     const skip = pageSize ? (page - 1) * pageSize : 0;
     const where: Prisma.PostWhereInput = categoryId
@@ -29,7 +29,13 @@ export class RecipeService {
       : {};
 
     const recipes = await this.prismaService.post.findMany({
-      where,
+      where: {
+        ...where,
+        title: {
+          contains: search,
+          mode: 'insensitive',
+        },
+      },
       include: {
         recipe: {
           include: {
@@ -39,6 +45,7 @@ export class RecipeService {
               },
             },
             nutrition: true,
+            ingredient: true,
           },
         },
       },
@@ -47,7 +54,13 @@ export class RecipeService {
     });
 
     const numberOfRecipes = await this.prismaService.post.count({
-      where: where,
+      where: {
+        ...where,
+        title: {
+          contains: search,
+          mode: 'insensitive',
+        },
+      },
     });
 
     const totalPage = Math.ceil(numberOfRecipes / pageSize);

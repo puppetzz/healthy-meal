@@ -1,11 +1,11 @@
 import { Type } from 'class-transformer';
 import { IsNotEmpty, IsNumber, IsOptional, IsString } from 'class-validator';
 
-export class CreateCommentDTO {
+export class CreateMealPlanCommentDTO {
   @IsNotEmpty()
   @IsNumber()
   @Type(() => Number)
-  postId: number;
+  mealPlanId: number;
 
   @IsOptional()
   @IsNumber()
