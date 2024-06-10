@@ -67,13 +67,14 @@ model Post {
   publishedAt      DateTime?  @map("published_at")
   reviewerId       String?    @unique
 
-  recipe       Recipe?        @relation(fields: [recipeId], references: [id])
-  author       User           @relation("author_post", fields: [authorId], references: [id])
-  parent       Post?          @relation("ParentPost", fields: [parentId], references: [id])
-  post         Post[]         @relation("ParentPost")
-  postCategory PostCategory[]
-  comment      Comment[]
-  reviewer     User?          @relation("reviewer_post", fields: [reviewerId], references: [id])
+  recipe             Recipe?              @relation(fields: [recipeId], references: [id])
+  author             User                 @relation("author_post", fields: [authorId], references: [id])
+  parent             Post?                @relation("ParentPost", fields: [parentId], references: [id])
+  post               Post[]               @relation("ParentPost")
+  postCategory       PostCategory[]
+  comment            Comment[]
+  reviewer           User?                @relation("reviewer_post", fields: [reviewerId], references: [id])
+  notificationOnPost NotificationOnPost[]
 
   @@map("posts")
 }
@@ -263,6 +264,24 @@ model MealPlanComment {
   comment  MealPlanComment[] @relation("ParentMealPlanComment")
 
   @@map("meal_plan_comments")
+}
+
+model NotificationOnPost {
+  id                 Int @id @default(autoincrement())
+  postNotificationId Int @map("post_notification_id")
+  postId             Int @map("post_id")
+
+  postNotification PostNotification @relation(fields: [postNotificationId], references: [id])
+  post             Post             @relation(fields: [postId], references: [id])
+}
+
+model PostNotification {
+  id                 Int                  @id @default(autoincrement())
+  title              String
+  content            String
+  notificationOnPost NotificationOnPost[]
+
+  @@map("post_notification")
 }
 
 enum PostStatus {

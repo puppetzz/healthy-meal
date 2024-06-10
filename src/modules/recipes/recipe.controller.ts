@@ -57,4 +57,18 @@ export class RecipeController {
   ) {
     return await this.recipeService.updateRecipe(userId, updateRecipeDTO);
   }
+
+  @Get('/my-recipe/all')
+  @UseGuards(FirebaseGuard)
+  @UsePipes(
+    new ValidationPipe({
+      transform: true,
+    }),
+  )
+  public async getRecipesByUser(
+    @AuthUser('uid') userId: string,
+    @Query() getRecipeDTO: GetRecipeDTO,
+  ) {
+    return this.recipeService.getRecipesByUserId(userId, getRecipeDTO);
+  }
 }

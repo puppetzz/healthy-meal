@@ -39,6 +39,7 @@ export class RecipeService {
           mode: 'insensitive',
         },
         ...whereWithFilter,
+        status: PostStatus.ACCEPTED,
       },
       include: {
         recipe: {
@@ -308,6 +309,76 @@ export class RecipeService {
       data: null,
       message: 'Update recipes successfully!',
       status: HttpStatus.OK,
+    };
+  }
+
+  public async getRecipesByUserId(userId: string, getRecipeDTO: GetRecipeDTO) {
+    const { page, pageSize, categoryId, search } = getRecipeDTO;
+
+    const skip = pageSize ? (page - 1) * pageSize : 0;
+    const where: Prisma.PostWhereInput = categoryId
+      ? {
+          recipe: {
+            recipeFoodCategory: {
+              some: {
+                foodCategoryId: categoryId,
+              },
+            },
+          },
+        }
+      : {};
+
+    const whereWithFilter = this.handleFilterCondition(getRecipeDTO);
+
+    const recipes = await this.prismaService.post.findMany({
+      where: {
+        ...where,
+        title: {
+          contains: search,
+          mode: 'insensitive',
+        },
+        ...whereWithFilter,
+        authorId: userId,
+      },
+      include: {
+        recipe: {
+          include: {
+            recipeFoodCategory: {
+              include: {
+                foodCategory: true,
+              },
+            },
+            nutrition: true,
+            ingredient: true,
+          },
+        },
+      },
+      skip,
+      take: pageSize,
+    });
+
+    const numberOfRecipes = await this.prismaService.post.count({
+      where: {
+        ...where,
+        title: {
+          contains: search,
+          mode: 'insensitive',
+        },
+        ...whereWithFilter,
+        authorId: userId,
+      },
+    });
+
+    const totalPage = Math.ceil(numberOfRecipes / pageSize);
+
+    return {
+      status: HttpStatus.OK,
+      data: {
+        data: recipes,
+        page,
+        total: totalPage,
+      },
+      message: 'Recipes fetched successfully!',
     };
   }
 

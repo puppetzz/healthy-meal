@@ -80,6 +80,11 @@ export type MealPlanRecipe = {
     day: Generated<number>;
     meal: Generated<number>;
 };
+export type NotificationOnPost = {
+    id: Generated<number>;
+    post_notification_id: number;
+    post_id: number;
+};
 export type Nutrition = {
     id: Generated<number>;
     recipe_id: number;
@@ -123,6 +128,11 @@ export type PostCategory = {
     post_id: number;
     category_id: number;
 };
+export type PostNotification = {
+    id: Generated<number>;
+    title: string;
+    content: string;
+};
 export type Recipe = {
     id: Generated<number>;
     prep_time: number;
@@ -158,8 +168,10 @@ export type DB = {
     meal_plan_comments: MealPlanComment;
     meal_plan_recipes: MealPlanRecipe;
     meal_plans: MealPlan;
+    NotificationOnPost: NotificationOnPost;
     nutritions: Nutrition;
     post_categories: PostCategory;
+    post_notification: PostNotification;
     posts: Post;
     recipe_food_categories: RecipeFoodCategory;
     recipes: Recipe;

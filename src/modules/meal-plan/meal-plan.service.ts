@@ -132,4 +132,57 @@ export class MealPlanService {
       status: HttpStatus.CREATED,
     };
   }
+
+  public async getMealPlansByUser(
+    userId: string,
+    paginationDTO: PaginationDTO,
+  ): Promise<TResponse<TMealPlanPagination>> {
+    const { page, pageSize } = paginationDTO;
+
+    let skip = 0;
+    let take = undefined;
+
+    if (page && pageSize) {
+      skip = (page - 1) * pageSize;
+      take = pageSize;
+    }
+
+    const mealPlans = await this.prismaService.mealPlan.findMany({
+      where: {
+        authorId: userId,
+      },
+      include: {
+        mealPlanRecipe: {
+          include: {
+            recipe: {
+              include: {
+                post: true,
+              },
+            },
+          },
+        },
+        author: true,
+      },
+      skip,
+      take,
+    });
+
+    const numberOfMealPlans = await this.prismaService.mealPlan.count({
+      where: {
+        authorId: userId,
+      },
+    });
+
+    const totalPage = Math.ceil(numberOfMealPlans / pageSize);
+
+    return {
+      data: {
+        data: mealPlans,
+        page,
+        total: totalPage,
+      },
+      message: 'Meal plan fetched successfully!',
+      status: 200,
+    };
+  }
 }

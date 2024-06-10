@@ -38,4 +38,14 @@ export class MealPlanController {
   ) {
     return this.mealPlanService.createMealPlan(userId, data);
   }
+
+  @Get('/my-meal-plans/all')
+  @UsePipes(new ValidationPipe({ transform: true }))
+  @UseGuards(FirebaseGuard)
+  public async getMealPlansByUser(
+    @AuthUser('uid') userId: string,
+    @Query() paginationDTO: PaginationDTO,
+  ) {
+    return this.mealPlanService.getMealPlansByUser(userId, paginationDTO);
+  }
 }
