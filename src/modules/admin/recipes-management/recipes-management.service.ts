@@ -1,20 +1,21 @@
 import { BadRequestException, HttpStatus, Injectable } from '@nestjs/common';
-import { PrismaService } from '../../services/database/prisma.service';
-import { TResponse } from '../../types/response-type';
+import { PrismaService } from '../../../services/database/prisma.service';
 import { Post, PostStatus, Prisma } from '@prisma/client';
-import { GetRecipeDTO } from '../../common/dto/recipes/get-recipe.dto';
-import { TPostPagination } from '../../types/post-pagination.type';
-import { CreateRecipeDTO } from '../../common/dto/recipes/create-recipes.dto';
-import { UpdateRecipeDTO } from '../../common/dto/recipes/update-recipe.dto';
+import { TResponse } from '../../../types/response-type';
+import { TPostPagination } from '../../../types/post-pagination.type';
+import { GetRecipeDTO } from '../../../common/dto/recipes/get-recipe.dto';
+import { ERecipesSearchOption } from '../../../common/enums/recipes-search-option';
+import { CreateRecipeDTO } from '../../../common/dto/recipes/create-recipes.dto';
+import { UpdateRecipeDTO } from '../../../common/dto/recipes/update-recipe.dto';
 
 @Injectable()
-export class RecipeService {
+export class RecipesManagementService {
   constructor(private readonly prismaService: PrismaService) {}
 
   public async getRecipes(
     getRecipeDTO: GetRecipeDTO,
   ): Promise<TResponse<TPostPagination>> {
-    const { page, pageSize, categoryId, search } = getRecipeDTO;
+    const { page, pageSize, categoryId, search, searchBy } = getRecipeDTO;
 
     const skip = pageSize ? (page - 1) * pageSize : 0;
     const where: Prisma.PostWhereInput = categoryId
@@ -31,13 +32,12 @@ export class RecipeService {
 
     const whereWithFilter = this.handleFilterCondition(getRecipeDTO);
 
+    const searchFilter = this.handleSearchOption(searchBy, search);
+
     const recipes = await this.prismaService.post.findMany({
       where: {
         ...where,
-        title: {
-          contains: search,
-          mode: 'insensitive',
-        },
+        ...searchFilter,
         ...whereWithFilter,
       },
       include: {
@@ -52,6 +52,7 @@ export class RecipeService {
             ingredient: true,
           },
         },
+        author: true,
       },
       skip,
       take: pageSize,
@@ -60,10 +61,7 @@ export class RecipeService {
     const numberOfRecipes = await this.prismaService.post.count({
       where: {
         ...where,
-        title: {
-          contains: search,
-          mode: 'insensitive',
-        },
+        ...searchFilter,
         ...whereWithFilter,
       },
     });
@@ -211,7 +209,6 @@ export class RecipeService {
   ): Promise<TResponse<null>> {
     const post = await this.prismaService.post.findFirst({
       where: {
-        authorId: userId,
         id: updateRecipeDTO.id,
       },
       include: {
@@ -309,6 +306,49 @@ export class RecipeService {
       message: 'Update recipes successfully!',
       status: HttpStatus.OK,
     };
+  }
+
+  private handleSearchOption(
+    searchBy: ERecipesSearchOption,
+    search: string,
+  ): Prisma.PostWhereInput {
+    switch (searchBy) {
+      case ERecipesSearchOption.TITLE:
+        return {
+          title: {
+            contains: search,
+            mode: 'insensitive',
+          },
+        };
+      case ERecipesSearchOption.AUTHOR:
+        return {
+          author: {
+            fullName: {
+              contains: search,
+              mode: 'insensitive',
+            },
+          },
+        };
+      default:
+        return {
+          OR: [
+            {
+              title: {
+                contains: search,
+                mode: 'insensitive',
+              },
+            },
+            {
+              author: {
+                fullName: {
+                  contains: search,
+                  mode: 'insensitive',
+                },
+              },
+            },
+          ],
+        };
+    }
   }
 
   private handleFilterCondition(

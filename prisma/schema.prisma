@@ -26,15 +26,27 @@ model User {
   fullName  String   @map("full_name")
   email     String
   picture   String?
+  roleId    Int      @map("role_id")
   createdAt DateTime @default(now()) @map("created_at")
 
-  post            Post[]
   comment         Comment[]
   mealPlan        MealPlan[]
-  HealthMetric    HealthMetric?
-  MealPlanComment MealPlanComment[]
+  healthMetric    HealthMetric?
+  mealPlanComment MealPlanComment[]
+  role            Role              @relation(fields: [roleId], references: [id])
+  postOwned       Post[]            @relation("author_post")
+  postReviewed    Post?             @relation("reviewer_post")
 
   @@map("users")
+}
+
+model Role {
+  id   Int    @id @default(autoincrement())
+  name String
+
+  user User[]
+
+  @@map("role")
 }
 
 model Post {
@@ -53,13 +65,15 @@ model Post {
   createdAt        DateTime   @default(now()) @map("created_at")
   updatedAt        DateTime   @default(now()) @map("updated_at")
   publishedAt      DateTime?  @map("published_at")
+  reviewerId       String?    @unique
 
   recipe       Recipe?        @relation(fields: [recipeId], references: [id])
-  author       User           @relation(fields: [authorId], references: [id])
+  author       User           @relation("author_post", fields: [authorId], references: [id])
   parent       Post?          @relation("ParentPost", fields: [parentId], references: [id])
   post         Post[]         @relation("ParentPost")
   postCategory PostCategory[]
   comment      Comment[]
+  reviewer     User?          @relation("reviewer_post", fields: [reviewerId], references: [id])
 
   @@map("posts")
 }

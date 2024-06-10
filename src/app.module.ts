@@ -10,6 +10,8 @@ import { PostsModule } from './modules/posts/posts.module';
 import { CommentsModule } from './modules/comments/comments.module';
 import { MealPlanModule } from './modules/meal-plan/meal-plan.module';
 import { HealthMetricsCalculatorModule } from './modules/health-metrics-calculator/health-metrics-calculator.module';
+import { EventsModule } from './modules/gateway/events.module';
+import { AdminModule } from './modules/admin/admin.module';
 
 @Module({
   imports: [
@@ -26,6 +28,8 @@ import { HealthMetricsCalculatorModule } from './modules/health-metrics-calculat
     CommentsModule,
     MealPlanModule,
     HealthMetricsCalculatorModule,
+    EventsModule,
+    AdminModule,
   ],
 })
 export class AppModule {}

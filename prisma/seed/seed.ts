@@ -1,5 +1,6 @@
 import { MealPlanStatus, PostStatus, PrismaClient } from '@prisma/client';
 import { faker } from '@faker-js/faker';
+import { ERoleID } from '../../src/common/enums/role.enum';
 
 const prisma = new PrismaClient();
 
@@ -19,6 +20,7 @@ async function main() {
         email: faker.internet.email(),
         fullName: faker.person.fullName(),
         picture: faker.image.avatar(),
+        roleId: ERoleID.USER,
       },
     });
 

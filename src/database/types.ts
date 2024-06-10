@@ -117,6 +117,7 @@ export type Post = {
     created_at: Generated<Timestamp>;
     updated_at: Generated<Timestamp>;
     published_at: Timestamp | null;
+    reviewerId: string | null;
 };
 export type PostCategory = {
     post_id: number;
@@ -136,11 +137,16 @@ export type RecipeFoodCategory = {
     recipe_id: number;
     food_category_id: number;
 };
+export type Role = {
+    id: Generated<number>;
+    name: string;
+};
 export type User = {
     id: string;
     full_name: string;
     email: string;
     picture: string | null;
+    role_id: number;
     created_at: Generated<Timestamp>;
 };
 export type DB = {
@@ -157,5 +163,6 @@ export type DB = {
     posts: Post;
     recipe_food_categories: RecipeFoodCategory;
     recipes: Recipe;
+    role: Role;
     users: User;
 };

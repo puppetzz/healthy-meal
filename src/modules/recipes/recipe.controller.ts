@@ -4,6 +4,7 @@ import {
   Get,
   Param,
   Post,
+  Put,
   Query,
   UseGuards,
   UsePipes,
@@ -15,6 +16,7 @@ import { GetRecipeDTO } from '../../common/dto/recipes/get-recipe.dto';
 import { CreateRecipeDTO } from '../../common/dto/recipes/create-recipes.dto';
 import { FirebaseGuard } from '../auth/guards/firebase.guard';
 import { AuthUser } from '../../decorators/auth.decorator';
+import { UpdateRecipeDTO } from '../../common/dto/recipes/update-recipe.dto';
 
 @Controller('recipes')
 export class RecipeController {
@@ -26,8 +28,8 @@ export class RecipeController {
       transform: true,
     }),
   )
-  public async getRecipes(@Query() GetRecipeDTO: GetRecipeDTO) {
-    const recipes = await this.recipeService.getRecipes(GetRecipeDTO);
+  public async getRecipes(@Query() getRecipeDTO: GetRecipeDTO) {
+    const recipes = await this.recipeService.getRecipes(getRecipeDTO);
 
     return recipes;
   }
@@ -45,5 +47,14 @@ export class RecipeController {
     @Body() createRecipeDTO: CreateRecipeDTO,
   ) {
     return this.recipeService.createRecipe(userId, createRecipeDTO);
+  }
+
+  @Put()
+  @UseGuards(FirebaseGuard)
+  public async updateRecipe(
+    @AuthUser('uid') userId: string,
+    @Body() updateRecipeDTO: UpdateRecipeDTO,
+  ) {
+    return await this.recipeService.updateRecipe(userId, updateRecipeDTO);
   }
 }
