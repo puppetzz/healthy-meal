@@ -17,6 +17,11 @@ export class CreateMealPlanDTO {
   @IsString()
   frequency: MealPlanFrequency;
 
+  @IsNotEmpty()
+  @IsNumber()
+  @Type(() => Number)
+  mealPerDay: number;
+
   mealPlanRecipes: MealPlanRecipeDTO[];
 }
 

@@ -125,6 +125,7 @@ async function main() {
         title: faker.lorem.sentence(),
         content: faker.lorem.paragraph(),
         status: MealPlanStatus.PUBLISHED,
+        mealPerDay: 3,
       },
     });
 

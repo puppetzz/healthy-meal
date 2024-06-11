@@ -207,6 +207,7 @@ model MealPlan {
   createdAt        DateTime          @default(now()) @map("created_at")
   updatedAt        DateTime          @default(now()) @map("updated_at")
   publishedAt      DateTime?
+  mealPerDay       Int               @map("meal_per_day")
   rating           Float             @default(0)
   numberOfComments Int               @default(0) @map("number_of_comments")
   numberOfReviews  Int               @default(0) @map("number_of_reviews")

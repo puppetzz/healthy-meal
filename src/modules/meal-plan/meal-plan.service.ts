@@ -100,7 +100,7 @@ export class MealPlanService {
     userId: string,
     createMealPlanDTO: CreateMealPlanDTO,
   ): Promise<TResponse<MealPlan>> {
-    const { title, content, status, frequency, mealPlanRecipes } =
+    const { title, content, status, frequency, mealPlanRecipes, mealPerDay } =
       createMealPlanDTO;
 
     if (status !== MealPlanStatus.DRAFT && status !== MealPlanStatus.PENDING) {
@@ -114,6 +114,7 @@ export class MealPlanService {
         status: status,
         frequency: frequency,
         authorId: userId,
+        mealPerDay: mealPerDay,
         mealPlanRecipe: {
           create: mealPlanRecipes.map((mealPlanRecipe) => {
             return {

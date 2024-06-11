@@ -1,10 +1,11 @@
-import { Injectable } from '@nestjs/common';
+import { BadRequestException, HttpStatus, Injectable } from '@nestjs/common';
 import { PrismaService } from '../../../services/database/prisma.service';
 import { TResponse } from '../../../types/response-type';
 import { TMealPlanPagination } from '../../../types/meal-plan-pagination.type';
-import { MealPlan, Prisma } from '@prisma/client';
+import { MealPlan, MealPlanStatus, Prisma } from '@prisma/client';
 import { GetMealPlanDTO } from '../../../common/dto/meal-plan/get-meal-plans';
 import { EMealPlanSearchOption } from '../../../common/enums/MealPlanSearchOption';
+import { CreateMealPlanDTO } from '../../../common/dto/meal-plan/createMealPlan.dto';
 
 @Injectable()
 export class MealPlanManagementService {
@@ -88,6 +89,9 @@ export class MealPlanManagementService {
               },
             },
           },
+          orderBy: {
+            day: 'asc',
+          },
         },
         author: true,
       },
@@ -149,5 +153,79 @@ export class MealPlanManagementService {
           ],
         };
     }
+  }
+
+  public async createMealPlan(
+    userId: string,
+    createMealPlanDTO: CreateMealPlanDTO,
+  ): Promise<TResponse<MealPlan>> {
+    const { title, content, status, frequency, mealPlanRecipes, mealPerDay } =
+      createMealPlanDTO;
+
+    if (status !== MealPlanStatus.DRAFT && status !== MealPlanStatus.PENDING) {
+      throw new Error('Invalid meal plan status');
+    }
+
+    const mealPlan = await this.prismaService.mealPlan.create({
+      data: {
+        title: title,
+        content: content || '',
+        status: status,
+        frequency: frequency,
+        authorId: userId,
+        mealPerDay: mealPerDay,
+        mealPlanRecipe: {
+          create: mealPlanRecipes.map((mealPlanRecipe) => {
+            return {
+              recipeId: mealPlanRecipe.recipeId,
+              day: mealPlanRecipe.day,
+              meal: mealPlanRecipe.meal,
+            };
+          }),
+        },
+      },
+    });
+
+    return {
+      data: mealPlan,
+      message: 'Meal plan created successfully!',
+      status: HttpStatus.CREATED,
+    };
+  }
+
+  public async deleteMealPlan(id: number): Promise<TResponse<null>> {
+    const mealPlan = await this.prismaService.mealPlan.findFirst({
+      where: {
+        id: id,
+      },
+    });
+
+    if (!mealPlan) throw new BadRequestException('Meal Plan Does Not Exist!');
+
+    await this.prismaService.$transaction(async (tx) => {
+      await tx.mealPlanComment.deleteMany({
+        where: {
+          mealPlanId: id,
+        },
+      });
+
+      await tx.mealPlanRecipe.deleteMany({
+        where: {
+          mealPlanId: id,
+        },
+      });
+
+      await tx.mealPlan.delete({
+        where: {
+          id: id,
+        },
+      });
+    });
+
+    return {
+      data: null,
+      message: 'Delete Meal Plan Successfully!',
+      status: HttpStatus.OK,
+    };
   }
 }

@@ -1,4 +1,4 @@
-import { HttpStatus, Injectable } from '@nestjs/common';
+import { BadRequestException, HttpStatus, Injectable } from '@nestjs/common';
 import { ActivityLevel } from '../../common/enums/activity-level.enum';
 import { PrismaService } from '../../services/database/prisma.service';
 import { TDEECalculatorDTO } from '../../common/dto/health-metrics/calculator-TDEE.dto';
@@ -127,6 +127,9 @@ export class HealthMetricsCalculatorService {
         userId: userId,
       },
     });
+
+    if (!healthMetrics)
+      throw new BadRequestException('The user has no calculated TDEE yet!');
 
     return await this.calculateTDEEForUser(null, {
       weight: healthMetrics.weight,

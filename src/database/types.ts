@@ -59,6 +59,7 @@ export type MealPlan = {
     created_at: Generated<Timestamp>;
     updated_at: Generated<Timestamp>;
     publishedAt: Timestamp | null;
+    meal_per_day: number;
     rating: Generated<number>;
     number_of_comments: Generated<number>;
     number_of_reviews: Generated<number>;
