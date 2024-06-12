@@ -4,7 +4,7 @@ import { TResponse } from '../../types/response-type';
 import { MealPlan, MealPlanStatus } from '@prisma/client';
 import { PaginationDTO } from '../../common/dto/pagination.dto';
 import { TMealPlanPagination } from '../../types/meal-plan-pagination.type';
-import { CreateMealPlanDTO } from '../../common/dto/meal-plan/createMealPlan.dto';
+import { CreateMealPlanDTO } from '../../common/dto/meal-plan/create-meal-plan.dto';
 
 @Injectable()
 export class MealPlanService {

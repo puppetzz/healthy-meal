@@ -18,10 +18,6 @@ export class GetRecipeDTO extends PaginationDTO {
   searchBy: ERecipesSearchOption;
 
   @IsOptional()
-  @IsString()
-  category: string;
-
-  @IsOptional()
   @IsArray()
   @Type(() => Number)
   calories?: number[];

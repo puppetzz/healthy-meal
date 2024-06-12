@@ -5,13 +5,13 @@ import { ERoleID } from '../../src/common/enums/role.enum';
 const prisma = new PrismaClient();
 
 async function main() {
-  await prisma.category.createMany({
-    data: [
-      { name: 'recipe', key: 'recipe' },
-      { name: 'food', key: 'food' },
-      { name: 'drink', key: 'drink' },
-    ],
-  });
+  // await prisma.category.createMany({
+  //   data: [
+  //     { name: 'recipe', key: 'recipe' },
+  //     { name: 'food', key: 'food' },
+  //     { name: 'drink', key: 'drink' },
+  //   ],
+  // });
 
   for (let i = 0; i < 10; i++) {
     const user = await prisma.user.create({

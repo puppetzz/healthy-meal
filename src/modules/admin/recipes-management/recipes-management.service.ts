@@ -2,11 +2,11 @@ import { BadRequestException, HttpStatus, Injectable } from '@nestjs/common';
 import { PrismaService } from '../../../services/database/prisma.service';
 import { Post, PostStatus, Prisma } from '@prisma/client';
 import { TResponse } from '../../../types/response-type';
-import { TPostPagination } from '../../../types/post-pagination.type';
 import { GetRecipeDTO } from '../../../common/dto/recipes/get-recipe.dto';
 import { ERecipesSearchOption } from '../../../common/enums/recipes-search-option';
 import { CreateRecipeDTO } from '../../../common/dto/recipes/create-recipes.dto';
 import { UpdateRecipeDTO } from '../../../common/dto/recipes/update-recipe.dto';
+import { TRecipePagination } from '../../../types/recipe-pagination';
 
 @Injectable()
 export class RecipesManagementService {
@@ -14,53 +14,40 @@ export class RecipesManagementService {
 
   public async getRecipes(
     getRecipeDTO: GetRecipeDTO,
-  ): Promise<TResponse<TPostPagination>> {
-    const { page, pageSize, categoryId, search, searchBy } = getRecipeDTO;
+  ): Promise<TResponse<TRecipePagination>> {
+    const { page, pageSize, search, searchBy } = getRecipeDTO;
 
     const skip = pageSize ? (page - 1) * pageSize : 0;
-    const where: Prisma.PostWhereInput = categoryId
-      ? {
-          recipe: {
-            recipeFoodCategory: {
-              some: {
-                foodCategoryId: categoryId,
-              },
-            },
-          },
-        }
-      : {};
 
     const whereWithFilter = this.handleFilterCondition(getRecipeDTO);
 
     const searchFilter = this.handleSearchOption(searchBy, search);
 
-    const recipes = await this.prismaService.post.findMany({
+    const recipes = await this.prismaService.recipe.findMany({
       where: {
-        ...where,
         ...searchFilter,
         ...whereWithFilter,
       },
       include: {
-        recipe: {
+        recipeFoodCategory: {
           include: {
-            recipeFoodCategory: {
-              include: {
-                foodCategory: true,
-              },
-            },
-            nutrition: true,
-            ingredient: true,
+            foodCategory: true,
           },
         },
-        author: true,
+        nutrition: true,
+        ingredient: true,
+        post: {
+          include: {
+            author: true,
+          },
+        },
       },
       skip,
       take: pageSize,
     });
 
-    const numberOfRecipes = await this.prismaService.post.count({
+    const numberOfRecipes = await this.prismaService.recipe.count({
       where: {
-        ...where,
         ...searchFilter,
         ...whereWithFilter,
       },
@@ -71,7 +58,7 @@ export class RecipesManagementService {
     return {
       status: HttpStatus.OK,
       data: {
-        data: recipes,
+        recipes: recipes,
         page,
         total: totalPage,
       },
@@ -311,50 +298,56 @@ export class RecipesManagementService {
   private handleSearchOption(
     searchBy: ERecipesSearchOption,
     search: string,
-  ): Prisma.PostWhereInput {
+  ): Prisma.RecipeWhereInput {
     switch (searchBy) {
       case ERecipesSearchOption.TITLE:
         return {
-          title: {
-            contains: search,
-            mode: 'insensitive',
-          },
-        };
-      case ERecipesSearchOption.AUTHOR:
-        return {
-          author: {
-            fullName: {
+          post: {
+            title: {
               contains: search,
               mode: 'insensitive',
             },
           },
         };
-      default:
+      case ERecipesSearchOption.AUTHOR:
         return {
-          OR: [
-            {
-              title: {
+          post: {
+            author: {
+              fullName: {
                 contains: search,
                 mode: 'insensitive',
               },
             },
-            {
-              author: {
-                fullName: {
+          },
+        };
+      default:
+        return {
+          post: {
+            OR: [
+              {
+                title: {
                   contains: search,
                   mode: 'insensitive',
                 },
               },
-            },
-          ],
+              {
+                author: {
+                  fullName: {
+                    contains: search,
+                    mode: 'insensitive',
+                  },
+                },
+              },
+            ],
+          },
         };
     }
   }
 
   private handleFilterCondition(
     getRecipeDTO: GetRecipeDTO,
-  ): Prisma.PostWhereInput {
-    const { category, calories, protein, fat, carbs, sodium, fiber, sugar } =
+  ): Prisma.RecipeWhereInput {
+    const { categoryId, calories, protein, fat, carbs, sodium, fiber, sugar } =
       getRecipeDTO;
 
     const andPostRecipeNutritionCondition: Prisma.NutritionWhereInput[] = [];
@@ -423,20 +416,16 @@ export class RecipesManagementService {
     }
 
     return {
-      recipe: {
-        nutrition: {
-          AND: [...andPostRecipeNutritionCondition],
-        },
-        recipeFoodCategory: category
-          ? {
-              some: {
-                foodCategory: {
-                  key: category,
-                },
-              },
-            }
-          : {},
+      nutrition: {
+        AND: [...andPostRecipeNutritionCondition],
       },
+      recipeFoodCategory: categoryId
+        ? {
+            some: {
+              foodCategoryId: categoryId,
+            },
+          }
+        : {},
     };
   }
 }

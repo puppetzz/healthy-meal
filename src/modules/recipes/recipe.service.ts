@@ -3,9 +3,9 @@ import { PrismaService } from '../../services/database/prisma.service';
 import { TResponse } from '../../types/response-type';
 import { Post, PostStatus, Prisma } from '@prisma/client';
 import { GetRecipeDTO } from '../../common/dto/recipes/get-recipe.dto';
-import { TPostPagination } from '../../types/post-pagination.type';
 import { CreateRecipeDTO } from '../../common/dto/recipes/create-recipes.dto';
 import { UpdateRecipeDTO } from '../../common/dto/recipes/update-recipe.dto';
+import { TRecipePagination } from '../../types/recipe-pagination';
 
 @Injectable()
 export class RecipeService {
@@ -13,57 +13,45 @@ export class RecipeService {
 
   public async getRecipes(
     getRecipeDTO: GetRecipeDTO,
-  ): Promise<TResponse<TPostPagination>> {
-    const { page, pageSize, categoryId, search } = getRecipeDTO;
+  ): Promise<TResponse<TRecipePagination>> {
+    const { page, pageSize, search } = getRecipeDTO;
 
     const skip = pageSize ? (page - 1) * pageSize : 0;
-    const where: Prisma.PostWhereInput = categoryId
-      ? {
-          recipe: {
-            recipeFoodCategory: {
-              some: {
-                foodCategoryId: categoryId,
-              },
-            },
-          },
-        }
-      : {};
 
     const whereWithFilter = this.handleFilterCondition(getRecipeDTO);
 
-    const recipes = await this.prismaService.post.findMany({
+    const recipes = await this.prismaService.recipe.findMany({
       where: {
-        ...where,
-        title: {
-          contains: search,
-          mode: 'insensitive',
+        post: {
+          title: {
+            contains: search,
+            mode: 'insensitive',
+          },
+          status: PostStatus.ACCEPTED,
         },
         ...whereWithFilter,
-        status: PostStatus.ACCEPTED,
       },
       include: {
-        recipe: {
+        recipeFoodCategory: {
           include: {
-            recipeFoodCategory: {
-              include: {
-                foodCategory: true,
-              },
-            },
-            nutrition: true,
-            ingredient: true,
+            foodCategory: true,
           },
         },
+        nutrition: true,
+        ingredient: true,
+        post: true,
       },
       skip,
       take: pageSize,
     });
 
-    const numberOfRecipes = await this.prismaService.post.count({
+    const numberOfRecipes = await this.prismaService.recipe.count({
       where: {
-        ...where,
-        title: {
-          contains: search,
-          mode: 'insensitive',
+        post: {
+          title: {
+            contains: search,
+            mode: 'insensitive',
+          },
         },
         ...whereWithFilter,
       },
@@ -74,7 +62,7 @@ export class RecipeService {
     return {
       status: HttpStatus.OK,
       data: {
-        data: recipes,
+        recipes: recipes,
         page,
         total: totalPage,
       },
@@ -312,60 +300,50 @@ export class RecipeService {
     };
   }
 
-  public async getRecipesByUserId(userId: string, getRecipeDTO: GetRecipeDTO) {
-    const { page, pageSize, categoryId, search } = getRecipeDTO;
+  public async getRecipesByUserId(
+    userId: string,
+    getRecipeDTO: GetRecipeDTO,
+  ): Promise<TResponse<TRecipePagination>> {
+    const { page, pageSize, search } = getRecipeDTO;
 
     const skip = pageSize ? (page - 1) * pageSize : 0;
-    const where: Prisma.PostWhereInput = categoryId
-      ? {
-          recipe: {
-            recipeFoodCategory: {
-              some: {
-                foodCategoryId: categoryId,
-              },
-            },
-          },
-        }
-      : {};
 
     const whereWithFilter = this.handleFilterCondition(getRecipeDTO);
 
-    const recipes = await this.prismaService.post.findMany({
+    const recipes = await this.prismaService.recipe.findMany({
       where: {
-        ...where,
-        title: {
-          contains: search,
-          mode: 'insensitive',
-        },
         ...whereWithFilter,
-        authorId: userId,
+        post: {
+          title: {
+            contains: search,
+            mode: 'insensitive',
+          },
+          authorId: userId,
+        },
       },
       include: {
-        recipe: {
+        recipeFoodCategory: {
           include: {
-            recipeFoodCategory: {
-              include: {
-                foodCategory: true,
-              },
-            },
-            nutrition: true,
-            ingredient: true,
+            foodCategory: true,
           },
         },
+        nutrition: true,
+        ingredient: true,
       },
       skip,
       take: pageSize,
     });
 
-    const numberOfRecipes = await this.prismaService.post.count({
+    const numberOfRecipes = await this.prismaService.recipe.count({
       where: {
-        ...where,
-        title: {
-          contains: search,
-          mode: 'insensitive',
-        },
         ...whereWithFilter,
-        authorId: userId,
+        post: {
+          title: {
+            contains: search,
+            mode: 'insensitive',
+          },
+          authorId: userId,
+        },
       },
     });
 
@@ -374,7 +352,7 @@ export class RecipeService {
     return {
       status: HttpStatus.OK,
       data: {
-        data: recipes,
+        recipes: recipes,
         page,
         total: totalPage,
       },
@@ -384,8 +362,8 @@ export class RecipeService {
 
   private handleFilterCondition(
     getRecipeDTO: GetRecipeDTO,
-  ): Prisma.PostWhereInput {
-    const { category, calories, protein, fat, carbs, sodium, fiber, sugar } =
+  ): Prisma.RecipeWhereInput {
+    const { categoryId, calories, protein, fat, carbs, sodium, fiber, sugar } =
       getRecipeDTO;
 
     const andPostRecipeNutritionCondition: Prisma.NutritionWhereInput[] = [];
@@ -454,20 +432,16 @@ export class RecipeService {
     }
 
     return {
-      recipe: {
-        nutrition: {
-          AND: [...andPostRecipeNutritionCondition],
-        },
-        recipeFoodCategory: category
-          ? {
-              some: {
-                foodCategory: {
-                  key: category,
-                },
-              },
-            }
-          : {},
+      nutrition: {
+        AND: [...andPostRecipeNutritionCondition],
       },
+      recipeFoodCategory: categoryId
+        ? {
+            some: {
+              foodCategoryId: categoryId,
+            },
+          }
+        : {},
     };
   }
 }

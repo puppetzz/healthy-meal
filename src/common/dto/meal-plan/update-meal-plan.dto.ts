@@ -1,17 +1,20 @@
 import { MealPlanFrequency } from '@prisma/client';
 import { Type } from 'class-transformer';
 import { IsNotEmpty, IsNumber, IsOptional, IsString } from 'class-validator';
+import { MealPlanRecipeDTO } from './meal-plan-recipe.dto';
 
-export class CreateMealPlanDTO {
+export class UpdateMealPlanDTO {
+  @IsNotEmpty()
+  @IsNumber()
+  @Type(() => Number)
+  id: number;
+
   @IsNotEmpty()
   @IsString()
   title: string;
 
   @IsOptional()
   content: string;
-
-  @IsNotEmpty()
-  status: string;
 
   @IsNotEmpty()
   @IsString()
@@ -23,21 +26,4 @@ export class CreateMealPlanDTO {
   mealPerDay: number;
 
   mealPlanRecipes: MealPlanRecipeDTO[];
-}
-
-export class MealPlanRecipeDTO {
-  @IsNotEmpty()
-  @IsNumber()
-  @Type(() => Number)
-  recipeId: number;
-
-  @IsNotEmpty()
-  @IsNumber()
-  @Type(() => Number)
-  day: number;
-
-  @IsNotEmpty()
-  @IsNumber()
-  @Type(() => Number)
-  meal: number;
 }

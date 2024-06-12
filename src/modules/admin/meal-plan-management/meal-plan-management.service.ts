@@ -5,7 +5,8 @@ import { TMealPlanPagination } from '../../../types/meal-plan-pagination.type';
 import { MealPlan, MealPlanStatus, Prisma } from '@prisma/client';
 import { GetMealPlanDTO } from '../../../common/dto/meal-plan/get-meal-plans';
 import { EMealPlanSearchOption } from '../../../common/enums/MealPlanSearchOption';
-import { CreateMealPlanDTO } from '../../../common/dto/meal-plan/createMealPlan.dto';
+import { CreateMealPlanDTO } from '../../../common/dto/meal-plan/create-meal-plan.dto';
+import { UpdateMealPlanDTO } from '../../../common/dto/meal-plan/update-meal-plan.dto';
 
 @Injectable()
 export class MealPlanManagementService {
@@ -225,6 +226,60 @@ export class MealPlanManagementService {
     return {
       data: null,
       message: 'Delete Meal Plan Successfully!',
+      status: HttpStatus.OK,
+    };
+  }
+
+  public async updateMealPlan(
+    userId: string,
+    updateMealPlanDTO: UpdateMealPlanDTO,
+  ): Promise<TResponse<MealPlan>> {
+    const { id, title, content, frequency, mealPerDay, mealPlanRecipes } =
+      updateMealPlanDTO;
+
+    const mealPlan = this.prismaService.mealPlan.findFirst({
+      where: {
+        id: id,
+      },
+    });
+
+    if (!mealPlan)
+      throw new BadRequestException('The meal plan does not exist!');
+
+    const updatedMealPlan = await this.prismaService.$transaction(
+      async (tx) => {
+        await tx.mealPlanRecipe.deleteMany({
+          where: {
+            mealPlanId: id,
+          },
+        });
+
+        await tx.mealPlanRecipe.createMany({
+          data: mealPlanRecipes.map((mealPlanRecipe) => ({
+            mealPlanId: id,
+            recipeId: mealPlanRecipe.recipeId,
+            day: mealPlanRecipe.day,
+            meal: mealPlanRecipe.meal,
+          })),
+        });
+
+        return await tx.mealPlan.update({
+          where: {
+            id: id,
+          },
+          data: {
+            title: title,
+            content: content,
+            frequency: frequency,
+            mealPerDay: mealPerDay,
+          },
+        });
+      },
+    );
+
+    return {
+      data: updatedMealPlan,
+      message: 'Update Meal Plan Successfully',
       status: HttpStatus.OK,
     };
   }

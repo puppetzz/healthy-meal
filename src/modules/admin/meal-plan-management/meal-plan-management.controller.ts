@@ -5,6 +5,7 @@ import {
   Get,
   Param,
   Post,
+  Put,
   Query,
   UseGuards,
   UsePipes,
@@ -14,7 +15,8 @@ import { MealPlanManagementService } from './meal-plan-management.service';
 import { GetMealPlanDTO } from '../../../common/dto/meal-plan/get-meal-plans';
 import { AdminGuard } from '../../auth/guards/admin.guard';
 import { AuthUser } from '../../../decorators/auth.decorator';
-import { CreateMealPlanDTO } from '../../../common/dto/meal-plan/createMealPlan.dto';
+import { CreateMealPlanDTO } from '../../../common/dto/meal-plan/create-meal-plan.dto';
+import { UpdateMealPlanDTO } from '../../../common/dto/meal-plan/update-meal-plan.dto';
 
 @Controller('/admin/meal-plans')
 export class MealPlanManagementController {
@@ -42,6 +44,15 @@ export class MealPlanManagementController {
     @Body() data: CreateMealPlanDTO,
   ) {
     return this.mealPlanManagementService.createMealPlan(userId, data);
+  }
+
+  @Put()
+  @UseGuards(AdminGuard)
+  public async updateMealPlan(
+    @AuthUser('uid') userId: string,
+    @Body() data: UpdateMealPlanDTO,
+  ) {
+    return this.mealPlanManagementService.updateMealPlan(userId, data);
   }
 
   @Delete(':id')

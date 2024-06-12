@@ -13,7 +13,7 @@ import { MealPlanService } from './meal-plan.service';
 import { PaginationDTO } from '../../common/dto/pagination.dto';
 import { FirebaseGuard } from '../auth/guards/firebase.guard';
 import { AuthUser } from '../../decorators/auth.decorator';
-import { CreateMealPlanDTO } from '../../common/dto/meal-plan/createMealPlan.dto';
+import { CreateMealPlanDTO } from '../../common/dto/meal-plan/create-meal-plan.dto';
 
 @Controller('meal-plans')
 export class MealPlanController {
