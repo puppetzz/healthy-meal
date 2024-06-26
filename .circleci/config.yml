@@ -41,7 +41,7 @@ jobs:
       - add_ssh_keys:
           fingerprints:
             - "SHA256:i2R49mh7C6CvBvsbS9d1KsQmyth82eqWZa7HI463ySY"
-      - run: ssh -oStrictHostKeyChecking=no root@159.65.138.198 "./deploy.sh"
+      - run: ssh -oStrictHostKeyChecking=no root@152.42.182.195 "./deploy.sh"
 
   # deploy-server-2:
   #   executor: docker/docker
