@@ -1,0 +1,75 @@
+version: 2.1
+
+orbs:
+  node: circleci/node@5.1.1
+  docker: circleci/docker@2.4.0
+
+jobs:
+  build-app:
+    executor: node/default
+    steps:
+      - checkout
+      - node/install-packages:
+          pkg-manager: yarn
+      - run: yarn build
+
+  build-and-push:
+    environment:
+      DOCKER_IMAGE: jette338/health-meals
+      DOCKER_TAG: latest
+    executor: docker/docker
+    steps:
+      - setup_remote_docker
+      - checkout
+      - docker/check:
+          docker-username: DOCKER_LOGIN
+          docker-password: DOCKER_PASSWORD
+      - docker/build:
+          image: $DOCKER_IMAGE
+          tag: $DOCKER_TAG
+      - docker/push:
+          digest-path: /tmp/digest.txt
+          image: $DOCKER_IMAGE
+          tag: $DOCKER_TAG
+      - run:
+          command: |
+            echo "Digest is: $(</tmp/digest.txt)"
+
+  deploy:
+    executor: docker/docker
+    steps:
+      - add_ssh_keys:
+          fingerprints:
+            - "11:0e:6f:cf:4d:23:fb:f3:fb:7a:34:d3:72:c7:31:e5"
+      - run: ssh -oStrictHostKeyChecking=no root@159.65.138.198 "./deploy.sh"
+
+  deploy-server-2:
+    executor: docker/docker
+    steps:
+      - add_ssh_keys:
+          fingerprints:
+            - "11:0e:6f:cf:4d:23:fb:f3:fb:7a:34:d3:72:c7:31:e5"
+      - run: ssh -oStrictHostKeyChecking=no root@128.199.206.196 "./deploy.sh"
+
+workflows:
+  deploy-anna-app:
+    jobs:
+      - build-app
+      - build-and-push:
+          requires:
+            - build-app
+          filters:
+            branches:
+              only: main
+      - deploy:
+          requires:
+            - build-and-push
+          filters:
+            branches:
+              only: main
+      - deploy-server-2:
+          requires:
+            - deploy
+          filters:
+            branches:
+              only: main
