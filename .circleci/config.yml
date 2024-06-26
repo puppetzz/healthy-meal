@@ -52,7 +52,7 @@ jobs:
   #     - run: ssh -oStrictHostKeyChecking=no root@128.199.206.196 "./deploy.sh"
 
 workflows:
-  deploy-anna-app:
+  deploy-app:
     jobs:
       - build-app
       - build-and-push:
@@ -67,9 +67,9 @@ workflows:
           filters:
             branches:
               only: main
-      - deploy-server-2:
-          requires:
-            - deploy
-          filters:
-            branches:
-              only: main
+      # - deploy-server-2:
+      #     requires:
+      #       - deploy
+      #     filters:
+      #       branches:
+      #         only: main
