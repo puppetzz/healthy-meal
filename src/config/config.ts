@@ -13,6 +13,8 @@ const configSchema = z.object({
   S3_BUCKET_NAME: z.string(),
   S3_ACCESS_KEY: z.string(),
   S3_SECRET_ACCESS_KEY: z.string(),
+  DATABASE_DIRECT_URL: z.string(),
+  DATABASE_URL: z.string(),
 });
 
 export const validateEnvironment = (config: Record<string, string>) => {
