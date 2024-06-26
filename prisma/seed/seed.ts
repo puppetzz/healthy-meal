@@ -1,26 +1,25 @@
 import { MealPlanStatus, PostStatus, PrismaClient } from '@prisma/client';
 import { faker } from '@faker-js/faker';
-import { ERoleID } from '../../src/common/enums/role.enum';
 
 const prisma = new PrismaClient();
 
 async function main() {
-  // await prisma.category.createMany({
-  //   data: [
-  //     { name: 'recipe', key: 'recipe' },
-  //     { name: 'food', key: 'food' },
-  //     { name: 'drink', key: 'drink' },
-  //   ],
-  // });
+  await prisma.category.createMany({
+    data: [
+      { name: 'recipe', key: 'recipe' },
+      { name: 'food', key: 'food' },
+      { name: 'drink', key: 'drink' },
+    ],
+  });
 
-  for (let i = 0; i < 10; i++) {
+  for (let i = 0; i < 5; i++) {
     const user = await prisma.user.create({
       data: {
         id: faker.string.uuid(),
         email: faker.internet.email(),
         fullName: faker.person.fullName(),
         picture: faker.image.avatar(),
-        roleId: ERoleID.USER,
+        roleId: 1,
       },
     });
 
