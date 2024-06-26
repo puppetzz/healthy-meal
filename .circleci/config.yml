@@ -11,7 +11,7 @@ jobs:
       - checkout
       - node/install-packages:
           pkg-manager: yarn
-      - run: yarn && yarn build
+      - run: yarn prisma generate && yarn build
 
   build-and-push:
     environment:
