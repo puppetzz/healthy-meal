@@ -39,19 +39,23 @@ export class EventsGateway
   }
 
   async handleConnection(socket: Socket) {
-    const token = socket.handshake.headers.authorization;
+    try {
+      const token = socket.handshake.headers.authorization;
 
-    await auth()
-      .verifyIdToken(token)
-      .then((claims) => {
-        if (!claims.role || claims.role !== ERole.ADMIN) {
-          return;
-        }
-        socket.join(ADMIN_ROOM);
-      })
-      .catch(() => {
-        socket.disconnect();
-      });
+      await auth()
+        .verifyIdToken(token)
+        .then((claims) => {
+          if (!claims.role || claims.role !== ERole.ADMIN) {
+            return;
+          }
+          socket.join(ADMIN_ROOM);
+        })
+        .catch(() => {
+          socket.disconnect();
+        });
+    } catch (error) {
+      socket.disconnect();
+    }
   }
 
   async handleDisconnect() {}
