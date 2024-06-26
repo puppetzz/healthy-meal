@@ -4,7 +4,7 @@ export type Generated<T> = T extends ColumnType<infer S, infer I, infer U>
   : ColumnType<T, T | undefined, T>;
 export type Timestamp = ColumnType<Date, Date | string, Date | string>;
 
-import type { PostStatus, MealPlanStatus, MealPlanFrequency, Gender, ActivityLevel } from "./enums";
+import type { PostStatus, MealPlanStatus, MealPlanFrequency, Gender, ActivityLevel, Goal, NotificationExternalTable } from "./enums";
 
 export type Category = {
     id: Generated<number>;
@@ -39,6 +39,7 @@ export type HealthMetric = {
     bmi: number;
     bmr: number;
     tdee: number;
+    goal: Generated<Goal>;
 };
 export type Ingredient = {
     id: Generated<number>;
@@ -81,10 +82,21 @@ export type MealPlanRecipe = {
     day: Generated<number>;
     meal: Generated<number>;
 };
+export type Notification = {
+    id: Generated<number>;
+    user_id: string;
+    title: string;
+    content: string;
+    sourceType: string | null;
+    sourceId: number | null;
+    create_at: Generated<Timestamp>;
+};
 export type NotificationOnPost = {
     id: Generated<number>;
     post_notification_id: number;
-    post_id: number;
+    external_id: number;
+    external_table: NotificationExternalTable;
+    reviewer_id: string | null;
 };
 export type Nutrition = {
     id: Generated<number>;
@@ -133,6 +145,7 @@ export type PostNotification = {
     id: Generated<number>;
     title: string;
     content: string;
+    create_at: Generated<Timestamp>;
 };
 export type Recipe = {
     id: Generated<number>;
@@ -169,7 +182,8 @@ export type DB = {
     meal_plan_comments: MealPlanComment;
     meal_plan_recipes: MealPlanRecipe;
     meal_plans: MealPlan;
-    NotificationOnPost: NotificationOnPost;
+    notification: Notification;
+    notification_on_post: NotificationOnPost;
     nutritions: Nutrition;
     post_categories: PostCategory;
     post_notification: PostNotification;

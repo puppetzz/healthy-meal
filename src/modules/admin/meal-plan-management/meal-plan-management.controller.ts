@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   Body,
   Controller,
   Delete,
@@ -17,6 +18,7 @@ import { AdminGuard } from '../../auth/guards/admin.guard';
 import { AuthUser } from '../../../decorators/auth.decorator';
 import { CreateMealPlanDTO } from '../../../common/dto/meal-plan/create-meal-plan.dto';
 import { UpdateMealPlanDTO } from '../../../common/dto/meal-plan/update-meal-plan.dto';
+import { ReviewRecipeDTO } from '../../../common/dto/recipes/review-recipe.dto';
 
 @Controller('/admin/meal-plans')
 export class MealPlanManagementController {
@@ -59,5 +61,27 @@ export class MealPlanManagementController {
   @UseGuards(AdminGuard)
   public async deleteMealPlan(@Param('id') id: number) {
     return this.mealPlanManagementService.deleteMealPlan(Number(id));
+  }
+
+  @Put('review/:id')
+  @UseGuards(AdminGuard)
+  @UsePipes(
+    new ValidationPipe({
+      transform: true,
+    }),
+  )
+  public async reviewRecipe(
+    @AuthUser('uid') userId: string,
+    @Param('id') mealPlanId: string,
+    @Body() data: ReviewRecipeDTO,
+  ) {
+    if (isNaN(parseInt(mealPlanId)))
+      throw new BadRequestException('Invalid recipeId');
+
+    return this.mealPlanManagementService.reviewMealPlan(
+      userId,
+      Number(mealPlanId),
+      data,
+    );
   }
 }

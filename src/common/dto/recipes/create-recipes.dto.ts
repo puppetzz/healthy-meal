@@ -6,11 +6,12 @@ import {
   IsOptional,
   IsString,
 } from 'class-validator';
+import { ECreateStatus } from '../../enums/create-status.enum';
 
 export class CreateRecipeDTO {
   @IsNotEmpty()
   @IsString()
-  status: string;
+  status: ECreateStatus;
 
   @IsNotEmpty()
   @IsString()
@@ -40,6 +41,11 @@ export class CreateRecipeDTO {
   servings: number;
 
   @IsNotEmpty()
+  @IsNumber()
+  @Type(() => Number)
+  servingSize: number;
+
+  @IsNotEmpty()
   @IsString()
   calculationUnit: string;
 
@@ -54,10 +60,6 @@ export class CreateRecipeDTO {
   @IsNotEmpty()
   @IsArray()
   foodCategoryIds: number[];
-
-  @IsNotEmpty()
-  @IsArray()
-  postCategoryIds: number[];
 
   @IsNotEmpty()
   calories: number;

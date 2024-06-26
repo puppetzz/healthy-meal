@@ -1,6 +1,8 @@
 import {
+  BadRequestException,
   Body,
   Controller,
+  Delete,
   Get,
   Param,
   Post,
@@ -17,6 +19,7 @@ import { CreateRecipeDTO } from '../../common/dto/recipes/create-recipes.dto';
 import { FirebaseGuard } from '../auth/guards/firebase.guard';
 import { AuthUser } from '../../decorators/auth.decorator';
 import { UpdateRecipeDTO } from '../../common/dto/recipes/update-recipe.dto';
+import { RecommendRecipesDTO } from '../../common/dto/recipes/recommend-recipes.dto';
 
 @Controller('recipes')
 export class RecipeController {
@@ -70,5 +73,37 @@ export class RecipeController {
     @Query() getRecipeDTO: GetRecipeDTO,
   ) {
     return this.recipeService.getRecipesByUserId(userId, getRecipeDTO);
+  }
+
+  @Get('/meal-plan/recommend')
+  @UsePipes(
+    new ValidationPipe({
+      transform: true,
+    }),
+  )
+  public async recommendRecipes(@Query() body: RecommendRecipesDTO) {
+    return this.recipeService.recommendRecipes(body);
+  }
+
+  @Get('/latest/first')
+  public async getLatestRecipe() {
+    return this.recipeService.getLatestRecipe();
+  }
+
+  @Get('/ranking/rating')
+  public async getRecipeRanking() {
+    return this.recipeService.getRecipesRanking();
+  }
+
+  @Delete('/:id')
+  @UseGuards(FirebaseGuard)
+  public async deleteRecipe(
+    @AuthUser('uid') userId: string,
+    @Param('id') recipeId: string,
+  ) {
+    if (isNaN(parseInt(recipeId)))
+      throw new BadRequestException('Invalid recipeId');
+
+    return this.recipeService.deleteRecipe(userId, Number(recipeId));
   }
 }

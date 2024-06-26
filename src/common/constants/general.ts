@@ -1,3 +1,5 @@
 export const KYSELY_PROVIDER = 'KYSELY_PROVIDER';
 
 export const S3_PRESIGNED_URL_EXPIRATION = 3600;
+
+export const ADMIN_ROOM = 'ADMIN';

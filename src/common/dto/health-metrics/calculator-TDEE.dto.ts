@@ -1,7 +1,7 @@
-import { IsNotEmpty, IsNumber, IsString } from 'class-validator';
+import { IsNotEmpty, IsNumber, IsOptional, IsString } from 'class-validator';
 import { Type } from 'class-transformer';
 import { ActivityLevel } from '../../enums/activity-level.enum';
-import { Gender } from '@prisma/client';
+import { Gender, Goal } from '@prisma/client';
 
 export class TDEECalculatorDTO {
   @IsNotEmpty()
@@ -26,4 +26,8 @@ export class TDEECalculatorDTO {
   @IsNotEmpty()
   @IsString()
   activityLevel: keyof typeof ActivityLevel;
+
+  @IsOptional()
+  @IsString()
+  goal: keyof typeof Goal;
 }

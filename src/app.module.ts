@@ -12,6 +12,7 @@ import { MealPlanModule } from './modules/meal-plan/meal-plan.module';
 import { HealthMetricsCalculatorModule } from './modules/health-metrics-calculator/health-metrics-calculator.module';
 import { EventsModule } from './modules/gateway/events.module';
 import { AdminModule } from './modules/admin/admin.module';
+import { NotificationsModule } from './modules/notifications/notifications.module';
 
 @Module({
   imports: [
@@ -30,6 +31,7 @@ import { AdminModule } from './modules/admin/admin.module';
     HealthMetricsCalculatorModule,
     EventsModule,
     AdminModule,
+    NotificationsModule,
   ],
 })
 export class AppModule {}

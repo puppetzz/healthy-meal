@@ -8,7 +8,7 @@ import {
   TTDEECalculator,
 } from '../../types/TDEE-calculator';
 import { TResponse } from '../../types/response-type';
-import { Gender } from '@prisma/client';
+import { Gender, Goal } from '@prisma/client';
 import { MacronutrientsRates } from '../../common/constants/macronutrients';
 import {
   TMacronutrientsForGoal,
@@ -19,10 +19,93 @@ import {
 export class HealthMetricsCalculatorService {
   constructor(private readonly prismaService: PrismaService) {}
 
-  public async calculateTDEEForUser(
-    userId: string | null,
+  public async getHealthMetricsForUser(
+    userId: string,
+  ): Promise<TResponse<TTDEECalculator>> {
+    const healthMetrics = await this.prismaService.healthMetric.findFirst({
+      where: {
+        userId: userId,
+      },
+    });
+
+    if (!healthMetrics)
+      throw new BadRequestException('The user has no calculated TDEE yet!');
+
+    const calculatedHealthMetrics = await this.calculateHealthMetrics({
+      weight: healthMetrics.weight,
+      height: healthMetrics.height,
+      age: healthMetrics.age,
+      gender: healthMetrics.gender,
+      activityLevel: healthMetrics.activityLevel as keyof typeof ActivityLevel,
+      goal: healthMetrics.goal as keyof typeof Goal,
+    });
+
+    return {
+      data: calculatedHealthMetrics,
+      message: 'Get health metrics successfully!',
+      status: HttpStatus.OK,
+    };
+  }
+
+  public async calculateHealthMetricForUser(
     tdeeCalculatorDTO: TDEECalculatorDTO,
   ): Promise<TResponse<TTDEECalculator>> {
+    const healthMetrics = await this.calculateHealthMetrics(tdeeCalculatorDTO);
+
+    return {
+      data: healthMetrics,
+      message: 'Calculate Successfully!',
+      status: HttpStatus.OK,
+    };
+  }
+
+  public async updateHealthMetricsForUser(
+    userId: string,
+    tdeeCalculatorDTO: TDEECalculatorDTO,
+  ): Promise<TResponse<TTDEECalculator>> {
+    const { weight, height, gender, activityLevel, age, goal } =
+      tdeeCalculatorDTO;
+
+    const calculatedHealthMetrics =
+      await this.calculateHealthMetrics(tdeeCalculatorDTO);
+
+    await this.prismaService.healthMetric.upsert({
+      where: {
+        userId: userId,
+      },
+      update: {
+        weight: weight,
+        height: height,
+        gender: gender,
+        activityLevel: activityLevel,
+        age: age,
+        goal: goal,
+        tdee: calculatedHealthMetrics.tdee,
+        bmi: calculatedHealthMetrics.bmi,
+        bmr: calculatedHealthMetrics.bmr,
+      },
+      create: {
+        userId: userId,
+        weight: weight,
+        height: height,
+        gender: gender,
+        activityLevel: activityLevel,
+        age: age,
+        goal: goal,
+        tdee: calculatedHealthMetrics.tdee,
+        bmi: calculatedHealthMetrics.bmi,
+        bmr: calculatedHealthMetrics.bmr,
+      },
+    });
+
+    return {
+      data: calculatedHealthMetrics,
+      message: 'Update successfully!',
+      status: HttpStatus.OK,
+    };
+  }
+
+  public async calculateHealthMetrics(tdeeCalculatorDTO: TDEECalculatorDTO) {
     const { weight, height, age, gender, activityLevel } = tdeeCalculatorDTO;
 
     const bmi = Math.round(
@@ -72,72 +155,20 @@ export class HealthMetricsCalculatorService {
 
     const macronutrients: TMacronutrientsForGoal = this.getMacronutrients(tdee);
 
-    if (userId) {
-      await this.prismaService.healthMetric.upsert({
-        where: {
-          userId: userId,
-        },
-        create: {
-          userId,
-          weight,
-          height,
-          age,
-          gender,
-          activityLevel,
-          bmi,
-          bmr,
-          tdee,
-        },
-        update: {
-          weight,
-          height,
-          age,
-          gender,
-          activityLevel,
-          bmi,
-          bmr,
-          tdee,
-        },
-      });
-    }
-
     return {
-      data: {
-        height,
-        weight,
-        age,
-        gender,
-        activityLevel,
-        bmi,
-        bmr,
-        tdee,
-        mealCaloriesRecommendation,
-        idealWeight,
-        anotherTDEE,
-        macronutrients,
-      },
-      message: 'TDEE calculated successfully!',
-      status: HttpStatus.OK,
+      height,
+      weight,
+      age,
+      gender,
+      activityLevel,
+      bmi,
+      bmr,
+      tdee,
+      mealCaloriesRecommendation,
+      idealWeight,
+      anotherTDEE,
+      macronutrients,
     };
-  }
-
-  public async getHealthMetricsForUser(userId: string) {
-    const healthMetrics = await this.prismaService.healthMetric.findFirst({
-      where: {
-        userId: userId,
-      },
-    });
-
-    if (!healthMetrics)
-      throw new BadRequestException('The user has no calculated TDEE yet!');
-
-    return await this.calculateTDEEForUser(null, {
-      weight: healthMetrics.weight,
-      height: healthMetrics.height,
-      age: healthMetrics.age,
-      gender: healthMetrics.gender,
-      activityLevel: healthMetrics.activityLevel as keyof typeof ActivityLevel,
-    });
   }
 
   public calculateBMI(weight: number, height: number) {

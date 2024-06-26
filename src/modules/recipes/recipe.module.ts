@@ -4,9 +4,10 @@ import { RecipeService } from './recipe.service';
 import { S3Service } from '../../services/s3/s3.service';
 import { KyselyModule } from '../../database/kysely/kysely.module';
 import { PrismaService } from '../../services/database/prisma.service';
+import { EventsModule } from '../gateway/events.module';
 
 @Module({
-  imports: [KyselyModule],
+  imports: [KyselyModule, EventsModule],
   controllers: [RecipeController],
   providers: [RecipeService, S3Service, PrismaService],
 })

@@ -13,12 +13,8 @@ export class HealthMetricsCalculatorController {
 
   @Post('calculate-tdee')
   @UseGuards(PermissiveAuthGuard)
-  public async calculateTDEE(
-    @AuthUser('uid') userId: string | null,
-    @Body() tdeeCalculatorDTO: TDEECalculatorDTO,
-  ) {
-    return this.healthMetricsCalculatorService.calculateTDEEForUser(
-      userId,
+  public async calculateTDEE(@Body() tdeeCalculatorDTO: TDEECalculatorDTO) {
+    return this.healthMetricsCalculatorService.calculateHealthMetricForUser(
       tdeeCalculatorDTO,
     );
   }
@@ -27,5 +23,17 @@ export class HealthMetricsCalculatorController {
   @UseGuards(FirebaseGuard)
   public async getHealthMetrics(@AuthUser('uid') userId: string) {
     return this.healthMetricsCalculatorService.getHealthMetricsForUser(userId);
+  }
+
+  @Post()
+  @UseGuards(FirebaseGuard)
+  public async updateUserHealthMetricForUser(
+    @AuthUser('uid') userId: string,
+    @Body() tdeeCalculatorDTO: TDEECalculatorDTO,
+  ) {
+    return this.healthMetricsCalculatorService.updateHealthMetricsForUser(
+      userId,
+      tdeeCalculatorDTO,
+    );
   }
 }

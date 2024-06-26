@@ -4,6 +4,7 @@ import {
   Get,
   Param,
   Post,
+  Put,
   Query,
   UseGuards,
   UsePipes,
@@ -14,6 +15,7 @@ import { PaginationDTO } from '../../common/dto/pagination.dto';
 import { FirebaseGuard } from '../auth/guards/firebase.guard';
 import { AuthUser } from '../../decorators/auth.decorator';
 import { CreateMealPlanDTO } from '../../common/dto/meal-plan/create-meal-plan.dto';
+import { UpdateMealPlanDTO } from '../../common/dto/meal-plan/update-meal-plan.dto';
 
 @Controller('meal-plans')
 export class MealPlanController {
@@ -47,5 +49,15 @@ export class MealPlanController {
     @Query() paginationDTO: PaginationDTO,
   ) {
     return this.mealPlanService.getMealPlansByUser(userId, paginationDTO);
+  }
+
+  @Put()
+  @UsePipes(new ValidationPipe({ transform: true }))
+  @UseGuards(FirebaseGuard)
+  public async updateMealPlan(
+    @AuthUser('uid') userId: string,
+    @Body() data: UpdateMealPlanDTO,
+  ) {
+    return this.mealPlanService.updateMealPlan(userId, data);
   }
 }

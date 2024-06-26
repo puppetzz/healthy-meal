@@ -1,14 +1,20 @@
-import { HttpStatus, Injectable } from '@nestjs/common';
+import { BadRequestException, HttpStatus, Injectable } from '@nestjs/common';
 import { PrismaService } from '../../services/database/prisma.service';
 import { TResponse } from '../../types/response-type';
 import { MealPlan, MealPlanStatus } from '@prisma/client';
 import { PaginationDTO } from '../../common/dto/pagination.dto';
 import { TMealPlanPagination } from '../../types/meal-plan-pagination.type';
 import { CreateMealPlanDTO } from '../../common/dto/meal-plan/create-meal-plan.dto';
+import { UpdateMealPlanDTO } from '../../common/dto/meal-plan/update-meal-plan.dto';
+import { ECreateStatus } from '../../common/enums/create-status.enum';
+import { EventsGateway } from '../gateway/events.gateway';
 
 @Injectable()
 export class MealPlanService {
-  constructor(private readonly prismaService: PrismaService) {}
+  constructor(
+    private readonly prismaService: PrismaService,
+    private readonly eventsGateway: EventsGateway,
+  ) {}
 
   public async getMealPlans(
     paginationDTO: PaginationDTO,
@@ -103,15 +109,18 @@ export class MealPlanService {
     const { title, content, status, frequency, mealPlanRecipes, mealPerDay } =
       createMealPlanDTO;
 
-    if (status !== MealPlanStatus.DRAFT && status !== MealPlanStatus.PENDING) {
-      throw new Error('Invalid meal plan status');
+    if (status !== ECreateStatus.DRAFT && status !== ECreateStatus.PUBLISH) {
+      throw new BadRequestException('Invalid status');
     }
 
     const mealPlan = await this.prismaService.mealPlan.create({
       data: {
         title: title,
         content: content || '',
-        status: status,
+        status:
+          status === ECreateStatus.PUBLISH
+            ? MealPlanStatus.PENDING
+            : MealPlanStatus.DRAFT,
         frequency: frequency,
         authorId: userId,
         mealPerDay: mealPerDay,
@@ -126,6 +135,17 @@ export class MealPlanService {
         },
       },
     });
+
+    if (status === ECreateStatus.PUBLISH) {
+      await this.eventsGateway.createPublishMealPlan(userId, mealPlan);
+      await this.prismaService.notification.create({
+        data: {
+          userId: userId,
+          title: 'Chia Sẻ Kế Hoạch Ăn Uống',
+          content: 'Yêu cầu chia sẻ kế hoạch của bạn đang được phê duyệt!',
+        },
+      });
+    }
 
     return {
       data: mealPlan,
@@ -185,5 +205,88 @@ export class MealPlanService {
       message: 'Meal plan fetched successfully!',
       status: 200,
     };
+  }
+
+  public async updateMealPlan(
+    userId: string,
+    updateMealPlanDTO: UpdateMealPlanDTO,
+  ): Promise<TResponse<MealPlan>> {
+    const { id, title, content, frequency, mealPerDay, mealPlanRecipes } =
+      updateMealPlanDTO;
+
+    const mealPlan = await this.prismaService.mealPlan.findFirst({
+      where: {
+        id: id,
+        authorId: userId,
+      },
+    });
+
+    if (!mealPlan)
+      throw new BadRequestException(
+        'Meal plan does not exist or you are not owner of meal plan!',
+      );
+
+    const updatedStatus = this.getUpdateStatus(mealPlan.status);
+
+    const updatedMealPlan = await this.prismaService.$transaction(
+      async (tx) => {
+        await tx.mealPlanRecipe.deleteMany({
+          where: {
+            mealPlanId: id,
+          },
+        });
+
+        await tx.mealPlanRecipe.createMany({
+          data: mealPlanRecipes.map((mealPlanRecipe) => ({
+            mealPlanId: id,
+            recipeId: mealPlanRecipe.recipeId,
+            day: mealPlanRecipe.day,
+            meal: mealPlanRecipe.meal,
+          })),
+        });
+
+        return await tx.mealPlan.update({
+          where: {
+            id: id,
+          },
+          data: {
+            title: title,
+            content: content,
+            frequency: frequency,
+            mealPerDay: mealPerDay,
+            status: updatedStatus,
+          },
+        });
+      },
+    );
+
+    if (updatedStatus === MealPlanStatus.PENDING) {
+      await this.eventsGateway.updatePublishMealPlan(userId, updatedMealPlan);
+      await this.prismaService.notification.create({
+        data: {
+          userId: userId,
+          title: 'Cập Nhật Kế Hoạch Ăn Uống',
+          content: 'Yêu cầu cập nhật kế hoạch của bạn đang được phê duyệt!',
+        },
+      });
+    }
+
+    return {
+      data: updatedMealPlan,
+      message: 'Update meal plan successfully!',
+      status: HttpStatus.OK,
+    };
+  }
+
+  public getUpdateStatus(currentStatus: MealPlanStatus): MealPlanStatus {
+    switch (currentStatus) {
+      case MealPlanStatus.PUBLISHED:
+      case MealPlanStatus.PENDING:
+        return MealPlanStatus.PENDING;
+      case MealPlanStatus.REJECTED:
+        return MealPlanStatus.REJECTED;
+      default:
+        return MealPlanStatus.DRAFT;
+    }
   }
 }

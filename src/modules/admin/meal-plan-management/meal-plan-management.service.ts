@@ -7,6 +7,9 @@ import { GetMealPlanDTO } from '../../../common/dto/meal-plan/get-meal-plans';
 import { EMealPlanSearchOption } from '../../../common/enums/MealPlanSearchOption';
 import { CreateMealPlanDTO } from '../../../common/dto/meal-plan/create-meal-plan.dto';
 import { UpdateMealPlanDTO } from '../../../common/dto/meal-plan/update-meal-plan.dto';
+import { ECreateStatus } from '../../../common/enums/create-status.enum';
+import { ReviewRecipeDTO } from '../../../common/dto/recipes/review-recipe.dto';
+import { EReviewRecipeStatus } from '../../../common/enums/review-recipe-status.enum';
 
 @Injectable()
 export class MealPlanManagementService {
@@ -163,15 +166,18 @@ export class MealPlanManagementService {
     const { title, content, status, frequency, mealPlanRecipes, mealPerDay } =
       createMealPlanDTO;
 
-    if (status !== MealPlanStatus.DRAFT && status !== MealPlanStatus.PENDING) {
-      throw new Error('Invalid meal plan status');
+    if (status !== ECreateStatus.DRAFT && status !== ECreateStatus.PUBLISH) {
+      throw new BadRequestException('Invalid status');
     }
 
     const mealPlan = await this.prismaService.mealPlan.create({
       data: {
         title: title,
         content: content || '',
-        status: status,
+        status:
+          status === ECreateStatus.PUBLISH
+            ? MealPlanStatus.PENDING
+            : MealPlanStatus.DRAFT,
         frequency: frequency,
         authorId: userId,
         mealPerDay: mealPerDay,
@@ -280,6 +286,56 @@ export class MealPlanManagementService {
     return {
       data: updatedMealPlan,
       message: 'Update Meal Plan Successfully',
+      status: HttpStatus.OK,
+    };
+  }
+
+  public async reviewMealPlan(
+    userId: string,
+    mealPlanId: number,
+    data: ReviewRecipeDTO,
+  ): Promise<TResponse<null>> {
+    const { status, notificationId } = data;
+
+    const mealPlan = await this.prismaService.mealPlan.findFirst({
+      where: {
+        id: mealPlanId,
+      },
+    });
+
+    if (!mealPlan) throw new BadRequestException('Recipe does not exist!');
+
+    await this.prismaService.mealPlan.update({
+      where: {
+        id: mealPlan.id,
+      },
+      data: {
+        status:
+          status === EReviewRecipeStatus.APPROVE
+            ? MealPlanStatus.PUBLISHED
+            : MealPlanStatus.REJECTED,
+      },
+    });
+
+    const notificationOnPost =
+      await this.prismaService.notificationOnPost.findFirst({
+        where: {
+          postNotificationId: notificationId,
+        },
+      });
+
+    await this.prismaService.notificationOnPost.update({
+      where: {
+        id: notificationOnPost.id,
+      },
+      data: {
+        reviewerId: userId,
+      },
+    });
+
+    return {
+      data: null,
+      message: 'Update recipe successfully!',
       status: HttpStatus.OK,
     };
   }

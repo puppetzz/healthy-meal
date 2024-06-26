@@ -7,6 +7,9 @@ import { ERecipesSearchOption } from '../../../common/enums/recipes-search-optio
 import { CreateRecipeDTO } from '../../../common/dto/recipes/create-recipes.dto';
 import { UpdateRecipeDTO } from '../../../common/dto/recipes/update-recipe.dto';
 import { TRecipePagination } from '../../../types/recipe-pagination';
+import { ECreateStatus } from '../../../common/enums/create-status.enum';
+import { ReviewRecipeDTO } from '../../../common/dto/recipes/review-recipe.dto';
+import { EReviewRecipeStatus } from '../../../common/enums/review-recipe-status.enum';
 
 @Injectable()
 export class RecipesManagementService {
@@ -99,8 +102,8 @@ export class RecipesManagementService {
     createRecipeDTO: CreateRecipeDTO,
   ): Promise<TResponse<null>> {
     if (
-      createRecipeDTO.status !== 'draft' &&
-      createRecipeDTO.status !== 'publish'
+      createRecipeDTO.status !== ECreateStatus.DRAFT &&
+      createRecipeDTO.status !== ECreateStatus.PUBLISH
     ) {
       throw new BadRequestException('Invalid status');
     }
@@ -161,11 +164,17 @@ export class RecipesManagementService {
         },
       });
 
+      const postCategory = await tx.category.findFirst({
+        where: {
+          key: 'recipe',
+        },
+      });
+
       await tx.post.create({
         data: {
           authorId: userId,
           status:
-            createRecipeDTO.status === 'publish'
+            createRecipeDTO.status === ECreateStatus.PUBLISH
               ? PostStatus.PENDING
               : PostStatus.DRAFT,
           thumbnail: createRecipeDTO.thumbnail,
@@ -173,11 +182,9 @@ export class RecipesManagementService {
           content: createRecipeDTO.content,
           recipeId: recipe.id,
           postCategory: {
-            create: createRecipeDTO.postCategoryIds.map((postCategoryId) => {
-              return {
-                categoryId: postCategoryId,
-              };
-            }),
+            create: {
+              categoryId: postCategory.id,
+            },
           },
         },
       });
@@ -426,6 +433,60 @@ export class RecipesManagementService {
             },
           }
         : {},
+    };
+  }
+
+  public async reviewRecipe(
+    userId: string,
+    recipeId: number,
+    data: ReviewRecipeDTO,
+  ): Promise<TResponse<null>> {
+    const { status, notificationId } = data;
+
+    const recipe = await this.prismaService.recipe.findFirst({
+      where: {
+        id: recipeId,
+      },
+      include: {
+        post: true,
+      },
+    });
+
+    if (!recipe) throw new BadRequestException('Recipe does not exist!');
+
+    await this.prismaService.post.update({
+      where: {
+        id: recipe.post.id,
+      },
+      data: {
+        status:
+          status === EReviewRecipeStatus.APPROVE
+            ? PostStatus.ACCEPTED
+            : PostStatus.REJECTED,
+        reviewerId: userId,
+      },
+    });
+
+    const notificationOnPost =
+      await this.prismaService.notificationOnPost.findFirst({
+        where: {
+          postNotificationId: notificationId,
+        },
+      });
+
+    await this.prismaService.notificationOnPost.update({
+      where: {
+        id: notificationOnPost.id,
+      },
+      data: {
+        reviewerId: userId,
+      },
+    });
+
+    return {
+      data: null,
+      message: 'Update recipe successfully!',
+      status: HttpStatus.OK,
     };
   }
 }
