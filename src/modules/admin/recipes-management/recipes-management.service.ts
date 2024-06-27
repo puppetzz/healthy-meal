@@ -233,6 +233,21 @@ export class RecipesManagementService {
           },
         },
       });
+
+      await tx.foodCategory.updateMany({
+        where: {
+          recipeFoodCategory: {
+            some: {
+              recipeId: recipe.id,
+            },
+          },
+        },
+        data: {
+          numberOfRecipes: {
+            increment: 1,
+          },
+        },
+      });
     });
 
     return {
@@ -555,6 +570,23 @@ export class RecipesManagementService {
         reviewerId: userId,
       },
     });
+
+    if (status === EReviewRecipeStatus.APPROVE) {
+      await this.prismaService.foodCategory.updateMany({
+        where: {
+          recipeFoodCategory: {
+            some: {
+              recipeId: recipe.id,
+            },
+          },
+        },
+        data: {
+          numberOfRecipes: {
+            increment: 1,
+          },
+        },
+      });
+    }
 
     const notificationOnPost =
       await this.prismaService.notificationOnPost.findFirst({
