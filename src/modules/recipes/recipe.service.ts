@@ -57,6 +57,11 @@ export class RecipeService {
         ingredient: true,
         post: true,
       },
+      orderBy: {
+        post: {
+          createdAt: 'desc',
+        },
+      },
       skip,
       take: pageSize,
     });

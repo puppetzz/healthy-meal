@@ -160,7 +160,7 @@ export class RecipesManagementService {
           cookTime: createRecipeDTO.cookTime,
           servings: createRecipeDTO.servings,
           keeping: createRecipeDTO.keeping,
-          freezer: createRecipeDTO.freezer,
+          freezer: '',
           calculationUnit: createRecipeDTO.calculationUnit,
 
           recipeFoodCategory: {
