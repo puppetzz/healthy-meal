@@ -5,4 +5,4 @@ ADD yarn.lock ./
 ADD prisma ./
 RUN yarn install
 ADD . .
-CMD ["sh", "-c", "yarn build && yarn start"]
+CMD ["sh", "-c", "yarn prisma generate && yarn build && yarn start"]
