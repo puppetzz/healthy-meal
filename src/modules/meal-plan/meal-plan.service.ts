@@ -30,6 +30,9 @@ export class MealPlanService {
     }
 
     const mealPlans = await this.prismaService.mealPlan.findMany({
+      where: {
+        status: MealPlanStatus.PUBLISHED,
+      },
       include: {
         mealPlanRecipe: {
           include: {
