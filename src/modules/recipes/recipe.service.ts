@@ -219,27 +219,37 @@ export class RecipeService {
       throw new BadRequestException('Invalid status');
     }
 
+    if (
+      !createRecipeDTO.calories ||
+      !createRecipeDTO.protein ||
+      !createRecipeDTO.carbohydrates ||
+      !createRecipeDTO.fat
+    )
+      throw new BadRequestException(
+        'Bạn phải nhập các chất dinh dưỡng được yêu cầu',
+      );
+
     if (createRecipeDTO.calories > 2500 || createRecipeDTO.calories < 0)
-      throw new BadRequestException('The calories out of valid range!');
+      throw new BadRequestException('Lượng calo vượt quá ngưỡng cho phép!');
 
     if (createRecipeDTO.protein > 80 || createRecipeDTO.protein < 0)
-      throw new BadRequestException('The protein out of valid range!');
+      throw new BadRequestException('Lượng protein vượt quá ngưỡng cho phép!');
 
     if (createRecipeDTO.fat > 70 || createRecipeDTO.fat < 0)
-      throw new BadRequestException('The fat out of valid range!');
+      throw new BadRequestException('Lượng chất béo vượt quá ngưỡng cho phép!');
     if (
       createRecipeDTO.carbohydrates > 100 ||
       createRecipeDTO.carbohydrates < 0
     )
-      throw new BadRequestException('The carbs out of valid range!');
+      throw new BadRequestException('Lượng calo vượt quá ngưỡng cho phép!');
     if (createRecipeDTO.sodium > 1900 || createRecipeDTO.sodium < 0)
-      throw new BadRequestException('The sodium out of valid range!');
+      throw new BadRequestException('Lượng natri vượt quá ngưỡng cho phép!');
 
     if (createRecipeDTO.fiber > 50 || createRecipeDTO.fiber < 0)
-      throw new BadRequestException('The fiber out of valid range!');
+      throw new BadRequestException('Lượng chất xơ vượt quá ngưỡng cho phép!');
 
     if (createRecipeDTO.sugar > 50 || createRecipeDTO.sugar < 0)
-      throw new BadRequestException('The sugar out of valid range!');
+      throw new BadRequestException('Lượng đường vượt quá ngưỡng cho phép!');
 
     const calCalories =
       createRecipeDTO.protein * CALORIES.PROTEIN +
