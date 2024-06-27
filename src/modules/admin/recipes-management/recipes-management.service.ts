@@ -10,6 +10,7 @@ import { TRecipePagination } from '../../../types/recipe-pagination';
 import { ECreateStatus } from '../../../common/enums/create-status.enum';
 import { ReviewRecipeDTO } from '../../../common/dto/recipes/review-recipe.dto';
 import { EReviewRecipeStatus } from '../../../common/enums/review-recipe-status.enum';
+import { CALORIES } from '../../../common/constants/nutrition';
 
 @Injectable()
 export class RecipesManagementService {
@@ -107,6 +108,50 @@ export class RecipesManagementService {
     ) {
       throw new BadRequestException('Invalid status');
     }
+
+    if (
+      !createRecipeDTO.calories ||
+      !createRecipeDTO.protein ||
+      !createRecipeDTO.carbohydrates ||
+      !createRecipeDTO.fat
+    )
+      throw new BadRequestException(
+        'Bạn phải nhập các chất dinh dưỡng được yêu cầu',
+      );
+
+    if (createRecipeDTO.calories > 2500 || createRecipeDTO.calories < 0)
+      throw new BadRequestException('Lượng calo vượt quá ngưỡng cho phép!');
+
+    if (createRecipeDTO.protein > 80 || createRecipeDTO.protein < 0)
+      throw new BadRequestException('Lượng protein vượt quá ngưỡng cho phép!');
+
+    if (createRecipeDTO.fat > 70 || createRecipeDTO.fat < 0)
+      throw new BadRequestException('Lượng chất béo vượt quá ngưỡng cho phép!');
+    if (
+      createRecipeDTO.carbohydrates > 100 ||
+      createRecipeDTO.carbohydrates < 0
+    )
+      throw new BadRequestException('Lượng calo vượt quá ngưỡng cho phép!');
+    if (createRecipeDTO.sodium > 1900 || createRecipeDTO.sodium < 0)
+      throw new BadRequestException('Lượng natri vượt quá ngưỡng cho phép!');
+
+    if (createRecipeDTO.fiber > 50 || createRecipeDTO.fiber < 0)
+      throw new BadRequestException('Lượng chất xơ vượt quá ngưỡng cho phép!');
+
+    if (createRecipeDTO.sugar > 50 || createRecipeDTO.sugar < 0)
+      throw new BadRequestException('Lượng đường vượt quá ngưỡng cho phép!');
+
+    const calCalories =
+      createRecipeDTO.protein * CALORIES.PROTEIN +
+      createRecipeDTO.fat * CALORIES.FAT +
+      createRecipeDTO.carbohydrates * CALORIES.CARBS +
+      createRecipeDTO.fiber * CALORIES.FIBER +
+      createRecipeDTO.sugar * CALORIES.SUGAR;
+
+    if (Math.abs(calCalories - createRecipeDTO.calories) > 50)
+      throw new BadRequestException(
+        'The calories not math with the nutrition!',
+      );
 
     this.prismaService.$transaction(async (tx) => {
       const recipe = await tx.recipe.create({
@@ -211,6 +256,50 @@ export class RecipesManagementService {
     });
 
     if (!post) throw new BadRequestException('You are not the owner of recipe');
+
+    if (
+      !updateRecipeDTO.calories ||
+      !updateRecipeDTO.protein ||
+      !updateRecipeDTO.carbohydrates ||
+      !updateRecipeDTO.fat
+    )
+      throw new BadRequestException(
+        'Bạn phải nhập các chất dinh dưỡng được yêu cầu',
+      );
+
+    if (updateRecipeDTO.calories > 2500 || updateRecipeDTO.calories < 0)
+      throw new BadRequestException('Lượng calo vượt quá ngưỡng cho phép!');
+
+    if (updateRecipeDTO.protein > 80 || updateRecipeDTO.protein < 0)
+      throw new BadRequestException('Lượng protein vượt quá ngưỡng cho phép!');
+
+    if (updateRecipeDTO.fat > 70 || updateRecipeDTO.fat < 0)
+      throw new BadRequestException('Lượng chất béo vượt quá ngưỡng cho phép!');
+    if (
+      updateRecipeDTO.carbohydrates > 100 ||
+      updateRecipeDTO.carbohydrates < 0
+    )
+      throw new BadRequestException('Lượng calo vượt quá ngưỡng cho phép!');
+    if (updateRecipeDTO.sodium > 1900 || updateRecipeDTO.sodium < 0)
+      throw new BadRequestException('Lượng natri vượt quá ngưỡng cho phép!');
+
+    if (updateRecipeDTO.fiber > 50 || updateRecipeDTO.fiber < 0)
+      throw new BadRequestException('Lượng chất xơ vượt quá ngưỡng cho phép!');
+
+    if (updateRecipeDTO.sugar > 50 || updateRecipeDTO.sugar < 0)
+      throw new BadRequestException('Lượng đường vượt quá ngưỡng cho phép!');
+
+    const calCalories =
+      updateRecipeDTO.protein * CALORIES.PROTEIN +
+      updateRecipeDTO.fat * CALORIES.FAT +
+      updateRecipeDTO.carbohydrates * CALORIES.CARBS +
+      updateRecipeDTO.fiber * CALORIES.FIBER +
+      updateRecipeDTO.sugar * CALORIES.SUGAR;
+
+    if (Math.abs(calCalories - updateRecipeDTO.calories) > 50)
+      throw new BadRequestException(
+        'The calories not math with the nutrition!',
+      );
 
     this.prismaService.$transaction(async (tx) => {
       const recipe = await tx.recipe.update({
@@ -486,6 +575,138 @@ export class RecipesManagementService {
     return {
       data: null,
       message: 'Update recipe successfully!',
+      status: HttpStatus.OK,
+    };
+  }
+
+  public async deleteRecipe(id: number): Promise<TResponse<null>> {
+    const recipe = await this.prismaService.recipe.findFirst({
+      where: {
+        id: id,
+      },
+      include: {
+        post: true,
+      },
+    });
+
+    if (!recipe)
+      throw new BadRequestException(
+        'Recipe does not exist or user is not owned of recipe!',
+      );
+
+    await this.prismaService.$transaction(async (tx) => {
+      const notificationOnPost = await tx.notificationOnPost.findMany({
+        where: {
+          externalId: recipe.post.id,
+        },
+      });
+
+      const postNotificationIds = notificationOnPost.map(
+        (noti) => noti.postNotificationId,
+      );
+
+      await tx.notificationOnPost.deleteMany({
+        where: {
+          externalId: recipe.post.id,
+        },
+      });
+
+      await tx.postNotification.deleteMany({
+        where: {
+          id: {
+            in: postNotificationIds,
+          },
+        },
+      });
+
+      const mealPlanRecipe = await tx.mealPlanRecipe.findMany({
+        where: {
+          recipeId: id,
+        },
+      });
+
+      const mealPlanIds = mealPlanRecipe.map((m) => m.mealPlanId);
+
+      await tx.mealPlanRecipe.deleteMany({
+        where: {
+          recipeId: id,
+        },
+      });
+
+      await tx.mealPlanComment.deleteMany({
+        where: {
+          mealPlanId: {
+            in: mealPlanIds,
+          },
+        },
+      });
+
+      await tx.mealPlan.deleteMany({
+        where: {
+          id: {
+            in: mealPlanIds,
+          },
+        },
+      });
+
+      await tx.ingredient.deleteMany({
+        where: {
+          recipeId: id,
+        },
+      });
+
+      await tx.mealPlanRecipe.deleteMany({
+        where: {
+          recipeId: id,
+        },
+      });
+
+      await tx.recipeFoodCategory.deleteMany({
+        where: {
+          recipeId: id,
+        },
+      });
+
+      await tx.nutrition.delete({
+        where: {
+          recipeId: id,
+        },
+      });
+
+      await tx.recipe.delete({
+        where: {
+          id: id,
+        },
+      });
+
+      await tx.postCategory.deleteMany({
+        where: {
+          postId: recipe.post.id,
+        },
+      });
+
+      await tx.notificationOnPost.deleteMany({
+        where: {
+          externalId: recipe.post.id,
+        },
+      });
+
+      await tx.comment.deleteMany({
+        where: {
+          postId: recipe.post.id,
+        },
+      });
+
+      await tx.post.delete({
+        where: {
+          id: recipe.post.id,
+        },
+      });
+    });
+
+    return {
+      data: null,
+      message: 'Delete recipe successfully!',
       status: HttpStatus.OK,
     };
   }

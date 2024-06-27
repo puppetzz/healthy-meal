@@ -40,6 +40,7 @@ export class RecipeController {
   @Get(':id')
   public async getRecipeById(@Param('id') id: number) {
     const postId = Number(id);
+
     return this.recipeService.getRecipeById(postId);
   }
 

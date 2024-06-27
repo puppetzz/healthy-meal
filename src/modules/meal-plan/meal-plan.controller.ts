@@ -1,6 +1,8 @@
 import {
+  BadRequestException,
   Body,
   Controller,
+  Delete,
   Get,
   Param,
   Post,
@@ -59,5 +61,17 @@ export class MealPlanController {
     @Body() data: UpdateMealPlanDTO,
   ) {
     return this.mealPlanService.updateMealPlan(userId, data);
+  }
+
+  @Delete(':id')
+  @UseGuards(FirebaseGuard)
+  public async deleteMealPlan(
+    @AuthUser('uid') userId: string,
+    @Param('id') id: string,
+  ) {
+    if (isNaN(Number(id)))
+      throw new BadRequestException('invalid meal plan id');
+
+    return await this.mealPlanService.deleteMealPlan(userId, Number(id));
   }
 }

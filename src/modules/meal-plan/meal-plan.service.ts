@@ -292,4 +292,67 @@ export class MealPlanService {
         return MealPlanStatus.DRAFT;
     }
   }
+
+  public async deleteMealPlan(
+    userId: string,
+    id: number,
+  ): Promise<TResponse<null>> {
+    const mealPlan = await this.prismaService.mealPlan.findFirst({
+      where: {
+        authorId: userId,
+        id: id,
+      },
+    });
+
+    if (!mealPlan)
+      throw new BadRequestException(
+        'The meal plan does not exist or you are not owner of meal plan',
+      );
+
+    await this.prismaService.$transaction(async (tx) => {
+      await tx.mealPlanComment.deleteMany({
+        where: {
+          mealPlanId: id,
+        },
+      });
+
+      await tx.mealPlanRecipe.deleteMany({
+        where: {
+          mealPlanId: id,
+        },
+      });
+
+      const notificationOnPost = await tx.notificationOnPost.findMany({
+        where: {
+          externalId: id,
+        },
+      });
+
+      await tx.notificationOnPost.deleteMany({
+        where: {
+          externalId: mealPlan.id,
+        },
+      });
+
+      await tx.postNotification.deleteMany({
+        where: {
+          id: {
+            in: notificationOnPost.map((noti) => noti.postNotificationId),
+          },
+        },
+      });
+
+      await tx.mealPlan.delete({
+        where: {
+          id: id,
+        },
+      });
+    });
+
+    return {
+      data: null,
+      message: 'Delete meal plan successfully',
+      status: HttpStatus.OK,
+    };
+  }
 }

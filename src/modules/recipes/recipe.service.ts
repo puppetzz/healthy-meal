@@ -380,6 +380,50 @@ export class RecipeService {
 
     if (!post) throw new BadRequestException('You are not the owner of recipe');
 
+    if (
+      !updateRecipeDTO.calories ||
+      !updateRecipeDTO.protein ||
+      !updateRecipeDTO.carbohydrates ||
+      !updateRecipeDTO.fat
+    )
+      throw new BadRequestException(
+        'Bạn phải nhập các chất dinh dưỡng được yêu cầu',
+      );
+
+    if (updateRecipeDTO.calories > 2500 || updateRecipeDTO.calories < 0)
+      throw new BadRequestException('Lượng calo vượt quá ngưỡng cho phép!');
+
+    if (updateRecipeDTO.protein > 80 || updateRecipeDTO.protein < 0)
+      throw new BadRequestException('Lượng protein vượt quá ngưỡng cho phép!');
+
+    if (updateRecipeDTO.fat > 70 || updateRecipeDTO.fat < 0)
+      throw new BadRequestException('Lượng chất béo vượt quá ngưỡng cho phép!');
+    if (
+      updateRecipeDTO.carbohydrates > 100 ||
+      updateRecipeDTO.carbohydrates < 0
+    )
+      throw new BadRequestException('Lượng calo vượt quá ngưỡng cho phép!');
+    if (updateRecipeDTO.sodium > 1900 || updateRecipeDTO.sodium < 0)
+      throw new BadRequestException('Lượng natri vượt quá ngưỡng cho phép!');
+
+    if (updateRecipeDTO.fiber > 50 || updateRecipeDTO.fiber < 0)
+      throw new BadRequestException('Lượng chất xơ vượt quá ngưỡng cho phép!');
+
+    if (updateRecipeDTO.sugar > 50 || updateRecipeDTO.sugar < 0)
+      throw new BadRequestException('Lượng đường vượt quá ngưỡng cho phép!');
+
+    const calCalories =
+      updateRecipeDTO.protein * CALORIES.PROTEIN +
+      updateRecipeDTO.fat * CALORIES.FAT +
+      updateRecipeDTO.carbohydrates * CALORIES.CARBS +
+      updateRecipeDTO.fiber * CALORIES.FIBER +
+      updateRecipeDTO.sugar * CALORIES.SUGAR;
+
+    if (Math.abs(calCalories - updateRecipeDTO.calories) > 50)
+      throw new BadRequestException(
+        'Lượng calo không khớp với các chất dinh dưỡng có trong công thức!',
+      );
+
     const updatedStatus = this.getUpdateStatus(post.status);
 
     this.prismaService.$transaction(async (tx) => {
@@ -645,6 +689,12 @@ export class RecipeService {
 
   public async getRecipesRanking(): Promise<TResponse<Recipe[]>> {
     const recipes = await this.prismaService.recipe.findMany({
+      where: {
+        post: {
+          status: PostStatus.ACCEPTED,
+        },
+      },
+
       include: {
         post: true,
         ingredient: true,
@@ -691,6 +741,60 @@ export class RecipeService {
       );
 
     await this.prismaService.$transaction(async (tx) => {
+      const notificationOnPost = await tx.notificationOnPost.findMany({
+        where: {
+          externalId: recipe.post.id,
+        },
+      });
+
+      const postNotificationIds = notificationOnPost.map(
+        (noti) => noti.postNotificationId,
+      );
+
+      await tx.notificationOnPost.deleteMany({
+        where: {
+          externalId: recipe.post.id,
+        },
+      });
+
+      await tx.postNotification.deleteMany({
+        where: {
+          id: {
+            in: postNotificationIds,
+          },
+        },
+      });
+
+      const mealPlanRecipe = await tx.mealPlanRecipe.findMany({
+        where: {
+          recipeId: recipeId,
+        },
+      });
+
+      const mealPlanIds = mealPlanRecipe.map((m) => m.mealPlanId);
+
+      await tx.mealPlanRecipe.deleteMany({
+        where: {
+          recipeId: recipeId,
+        },
+      });
+
+      await tx.mealPlanComment.deleteMany({
+        where: {
+          mealPlanId: {
+            in: mealPlanIds,
+          },
+        },
+      });
+
+      await tx.mealPlan.deleteMany({
+        where: {
+          id: {
+            in: mealPlanIds,
+          },
+        },
+      });
+
       await tx.ingredient.deleteMany({
         where: {
           recipeId: recipeId,
@@ -730,6 +834,12 @@ export class RecipeService {
       await tx.notificationOnPost.deleteMany({
         where: {
           externalId: recipe.post.id,
+        },
+      });
+
+      await tx.comment.deleteMany({
+        where: {
+          postId: recipe.post.id,
         },
       });
 

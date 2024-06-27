@@ -2,6 +2,7 @@ import {
   BadRequestException,
   Body,
   Controller,
+  Delete,
   Get,
   Param,
   Post,
@@ -49,7 +50,14 @@ export class RecipesManagementController {
     @AuthUser('uid') userId: string,
     @Body() createRecipeDTO: CreateRecipeDTO,
   ) {
-    return this.recipesManagementService.createRecipe(userId, createRecipeDTO);
+    try {
+      return this.recipesManagementService.createRecipe(
+        userId,
+        createRecipeDTO,
+      );
+    } catch (error) {
+      throw new BadRequestException('error');
+    }
   }
 
   @Put()
@@ -84,5 +92,13 @@ export class RecipesManagementController {
       Number(recipeId),
       data,
     );
+  }
+
+  @Delete(':id')
+  @UseGuards(AdminGuard)
+  public async deleteRecipe(@Param('id') id: string) {
+    if (isNaN(Number(id))) throw new BadRequestException('Invalid recipeId');
+
+    return this.recipesManagementService.deleteRecipe(Number(id));
   }
 }
