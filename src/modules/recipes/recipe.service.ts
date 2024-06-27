@@ -741,6 +741,21 @@ export class RecipeService {
       );
 
     await this.prismaService.$transaction(async (tx) => {
+      await tx.foodCategory.updateMany({
+        where: {
+          recipeFoodCategory: {
+            some: {
+              recipeId: recipe.id,
+            },
+          },
+        },
+        data: {
+          numberOfRecipes: {
+            decrement: 1,
+          },
+        },
+      });
+
       const notificationOnPost = await tx.notificationOnPost.findMany({
         where: {
           externalId: recipe.post.id,
