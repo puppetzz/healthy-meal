@@ -220,7 +220,7 @@ export class RecipesManagementService {
           authorId: userId,
           status:
             createRecipeDTO.status === ECreateStatus.PUBLISH
-              ? PostStatus.PENDING
+              ? PostStatus.ACCEPTED
               : PostStatus.DRAFT,
           thumbnail: createRecipeDTO.thumbnail,
           title: createRecipeDTO.title,
