@@ -697,6 +697,9 @@ export class RecipeService {
       where: {
         post: {
           status: PostStatus.ACCEPTED,
+          NOT: {
+            rating: null,
+          },
         },
       },
 
