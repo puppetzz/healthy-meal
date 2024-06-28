@@ -48,9 +48,37 @@ export class HealthMetricsCalculatorService {
   }
 
   public async calculateHealthMetricForUser(
+    userId: string,
     tdeeCalculatorDTO: TDEECalculatorDTO,
   ): Promise<TResponse<TTDEECalculator>> {
     const healthMetrics = await this.calculateHealthMetrics(tdeeCalculatorDTO);
+
+    await this.prismaService.healthMetric.upsert({
+      where: {
+        userId: userId,
+      },
+      update: {
+        weight: healthMetrics.weight,
+        height: healthMetrics.height,
+        gender: healthMetrics.gender,
+        activityLevel: healthMetrics.activityLevel,
+        age: healthMetrics.age,
+        tdee: healthMetrics.tdee,
+        bmi: healthMetrics.bmi,
+        bmr: healthMetrics.bmr,
+      },
+      create: {
+        userId: userId,
+        weight: healthMetrics.weight,
+        height: healthMetrics.height,
+        gender: healthMetrics.gender,
+        activityLevel: healthMetrics.activityLevel,
+        age: healthMetrics.age,
+        tdee: healthMetrics.tdee,
+        bmi: healthMetrics.bmi,
+        bmr: healthMetrics.bmr,
+      },
+    });
 
     return {
       data: healthMetrics,

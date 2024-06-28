@@ -13,8 +13,12 @@ export class HealthMetricsCalculatorController {
 
   @Post('calculate-tdee')
   @UseGuards(PermissiveAuthGuard)
-  public async calculateTDEE(@Body() tdeeCalculatorDTO: TDEECalculatorDTO) {
+  public async calculateTDEE(
+    @AuthUser('uid') userId: string,
+    @Body() tdeeCalculatorDTO: TDEECalculatorDTO,
+  ) {
     return this.healthMetricsCalculatorService.calculateHealthMetricForUser(
+      userId,
       tdeeCalculatorDTO,
     );
   }
